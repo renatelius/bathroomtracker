@@ -3,6 +3,9 @@
 dist/
 web-build/
 
+# Amazon Quick bridge (manual agent channel)
+.quick/
+
 # Node
 node_modules/
 npm-debug.log*
