@@ -10,6 +10,7 @@ import LogScreen from './src/screens/LogScreen';
 import PredictScreen from './src/screens/PredictScreen';
 import CalendarScreen from './src/screens/CalendarScreen';
 import HistoryScreen from './src/screens/HistoryScreen';
+import SettingsScreen from './src/screens/SettingsScreen';
 
 const Tab = createBottomTabNavigator();
 
@@ -56,6 +57,7 @@ export default function App() {
         <Tab.Screen name="Лог" component={LogScreen} />
         <Tab.Screen name="Календарь" component={CalendarScreen} />
         <Tab.Screen name="История" component={HistoryScreen} />
+        <Tab.Screen name="Настройки" component={SettingsScreen} />
       </Tab.Navigator>
     </NavigationContainer>
   );

@@ -16,6 +16,7 @@
     "@react-navigation/native": "^6.1.17",
     "babel-preset-expo": "~54.0.10",
     "expo": "~54.0.37",
+    "expo-calendar": "~15.0.8",
     "expo-linear-gradient": "~15.0.8",
     "expo-notifications": "~0.32.17",
     "expo-status-bar": "~3.0.9",

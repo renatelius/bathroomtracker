@@ -63,17 +63,20 @@ export async function ensurePermissions() {
 }
 
 /**
- * Ставит будильник на момент прогноза.
- * @param {{timeMs:number, title:string, body:string, exact?:boolean}} opts
+ * Ставит будильник, который звонит за `leadMinutes` минут до прогноза.
+ * @param {{predictedAtMs:number, leadMinutes?:number, title:string, body:string}} opts
  * @returns {Promise<string|null>} id уведомления или null при отказе
  */
 export async function schedulePrediction(opts) {
   const { granted } = await ensurePermissions();
   if (!granted) return null;
 
+  const lead = opts.leadMinutes || 0;
+  const ringAt = new Date(opts.predictedAtMs - lead * 60e3);
+
   const trigger = {
     type: Notifications.SchedulableTriggerInputTypes.DATE,
-    date: new Date(opts.timeMs),
+    date: ringAt,
     channelId: CHANNEL_ID,
   };
 
@@ -87,7 +90,9 @@ export async function schedulePrediction(opts) {
   const id = await Notifications.scheduleNotificationAsync({
     content: {
       title: opts.title,
-      body: opts.body,
+      body: lead > 0
+        ? `${opts.body} Через ~${lead} мин.`
+        : opts.body,
       sound: 'default',
       data: { key: PREDICTION_TRIGGER_KEY },
     },

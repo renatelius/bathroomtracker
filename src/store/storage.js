@@ -17,6 +17,14 @@ const KEYS = {
   profile: 'bt.profile',
   meals: 'bt.meals',
   defecations: 'bt.defecations',
+  settings: 'bt.settings',
+};
+
+const DEFAULT_SETTINGS = {
+  alarmEnabled: false,
+  alarmLeadMinutes: 10,
+  calendarEnabled: false,
+  alarmMode: 'notification', // 'notification' | 'system'
 };
 
 async function readJSON(key, fallback) {
@@ -84,8 +92,22 @@ export async function removeDefecation(id) {
   return list;
 }
 
+// ---------------- Настройки будильника/календаря ----------------
+
+export async function getSettings() {
+  const s = await readJSON(KEYS.settings, null);
+  return { ...DEFAULT_SETTINGS, ...(s || {}) };
+}
+
+export async function saveSettings(patch) {
+  const current = await getSettings();
+  const next = { ...current, ...patch };
+  await writeJSON(KEYS.settings, next);
+  return next;
+}
+
 // ---------------- Сброс ----------------
 
 export async function clearAll() {
-  await storageBackend.multiRemove([KEYS.profile, KEYS.meals, KEYS.defecations]);
+  await storageBackend.multiRemove([KEYS.profile, KEYS.meals, KEYS.defecations, KEYS.settings]);
 }
