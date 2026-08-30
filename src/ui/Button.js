@@ -56,8 +56,8 @@ export default function Button({
           <ActivityIndicator color={fg} />
         ) : (
           <>
-            {Icon && <Icon name={icon} size={19} color={fg} strokeWidth="regular" />}
-            <Text style={[styles.text, primaryButtonText, { color: fg }, textStyle, Icon && { marginLeft: 8 }]}>
+            {Icon && icon && <Icon name={icon} size={19} color={fg} strokeWidth="regular" />}
+            <Text style={[styles.text, primaryButtonText, { color: fg }, textStyle, icon && { marginLeft: 8 }]}>
               {title}
             </Text>
           </>

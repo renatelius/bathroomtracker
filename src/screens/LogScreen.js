@@ -78,7 +78,7 @@ export default function LogScreen() {
     const result = await ImagePicker.launchImageLibraryAsync({
       mediaTypes: ImagePicker.MediaTypeOptions.Images,
       allowsEditing: true,
-      quality: 0.7,
+      quality: 0.5,
     });
     if (!result.canceled && result.assets && result.assets[0]) {
       setPhotoUri(result.assets[0].uri);
@@ -252,6 +252,9 @@ export default function LogScreen() {
                   variant="secondary"
                   style={styles.spacer}
                 />
+                <Text style={styles.photoHint}>
+                  Оценка по фото — демо-режим. Для точности подключите реальный распознаватель.
+                </Text>
                 <TextField
                   label="Название (необязательно)"
                   value={photoName}
@@ -326,6 +329,7 @@ const styles = StyleSheet.create({
   photoPreview: { width: '100%', height: 180, resizeMode: 'cover' },
   photoEmpty: { height: 150, alignItems: 'center', justifyContent: 'center' },
   photoEmptyText: { marginTop: 8, color: palette.textMuted, fontSize: type.body },
+  photoHint: { fontSize: type.caption, color: palette.textMuted, textAlign: 'center', marginTop: 8, lineHeight: 16 },
 
   spacer: { marginTop: space.md },
 });

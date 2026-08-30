@@ -1,4 +1,4 @@
-import React, { useState, useCallback } from 'react';
+﻿import React, { useState, useCallback } from 'react';
 import {
   View,
   Text,
@@ -18,11 +18,11 @@ import { palette, type, space } from '../theme';
 import { LANGS } from '../i18n/locales';
 
 const BODY_LABELS = {
-  asthenic: 'Астеник',
-  normostenic: 'Нормостеник',
-  hypersthenic: 'Гиперстеник',
+  asthenic: 'РђСЃС‚РµРЅРёРє',
+  normostenic: 'РќРѕСЂРјРѕСЃС‚РµРЅРёРє',
+  hypersthenic: 'Р“РёРїРµСЂСЃС‚РµРЅРёРє',
 };
-const SEX_LABELS = { male: 'Мужской', female: 'Женский' };
+const SEX_LABELS = { male: 'РњСѓР¶СЃРєРѕР№', female: 'Р–РµРЅСЃРєРёР№' };
 
 export default function ProfileScreen() {
   const { t, lang, setLang } = useI18n();
@@ -42,7 +42,7 @@ export default function ProfileScreen() {
       mediaTypes: ImagePicker.MediaTypeOptions.Images,
       allowsEditing: true,
       aspect: [1, 1],
-      quality: 0.6,
+      quality: 0.5,
     });
     if (!result.canceled && result.assets && result.assets[0]) {
       const merged = { ...(profile || {}), avatarUri: result.assets[0].uri };
@@ -54,17 +54,17 @@ export default function ProfileScreen() {
 
   async function resetData() {
     Alert.alert(
-      'Сбросить все данные?',
-      'Профиль, история и настройки будут удалены. Это действие нельзя отменить.',
+      'РЎР±СЂРѕСЃРёС‚СЊ РІСЃРµ РґР°РЅРЅС‹Рµ?',
+      'РџСЂРѕС„РёР»СЊ, РёСЃС‚РѕСЂРёСЏ Рё РЅР°СЃС‚СЂРѕР№РєРё Р±СѓРґСѓС‚ СѓРґР°Р»РµРЅС‹. Р­С‚Рѕ РґРµР№СЃС‚РІРёРµ РЅРµР»СЊР·СЏ РѕС‚РјРµРЅРёС‚СЊ.',
       [
-        { text: 'Отмена', style: 'cancel' },
+        { text: 'РћС‚РјРµРЅР°', style: 'cancel' },
         {
-          text: 'Сбросить',
+          text: 'РЎР±СЂРѕСЃРёС‚СЊ',
           style: 'destructive',
           onPress: async () => {
             await clearAll();
             await saveLang(lang);
-            Alert.alert('Готово', 'Данные сброшены. Перезапустите приложение.');
+            Alert.alert('Р“РѕС‚РѕРІРѕ', 'Р”Р°РЅРЅС‹Рµ СЃР±СЂРѕС€РµРЅС‹. РџРµСЂРµР·Р°РїСѓСЃС‚РёС‚Рµ РїСЂРёР»РѕР¶РµРЅРёРµ.');
           },
         },
       ]
@@ -74,27 +74,27 @@ export default function ProfileScreen() {
   if (!profile) {
     return (
       <SafeAreaView style={styles.flex}>
-        <Text style={styles.loading}>Загрузка…</Text>
+        <Text style={styles.loading}>Р—Р°РіСЂСѓР·РєР°вЂ¦</Text>
       </SafeAreaView>
     );
   }
 
   const initials = profile.name
     ? profile.name.trim().split(/\s+/).slice(0, 2).map((w) => w[0]).join('').toUpperCase()
-    : '—';
+    : 'вЂ”';
 
   const rows = [
-    { icon: 'profile', title: 'Пол', value: SEX_LABELS[profile.sex] || profile.sex },
-    { icon: 'energy', title: 'Рост', value: `${profile.heightCm} см` },
-    { icon: 'energy', title: 'Вес', value: `${profile.weightKg} кг` },
-    { icon: 'forecast', title: 'Год рождения', value: String(profile.birthYear || '') },
-    { icon: 'settings', title: 'Телосложение', value: BODY_LABELS[profile.bodyType] || profile.bodyType },
+    { icon: 'profile', title: 'РџРѕР»', value: SEX_LABELS[profile.sex] || profile.sex },
+    { icon: 'energy', title: 'Р РѕСЃС‚', value: `${profile.heightCm} СЃРј` },
+    { icon: 'energy', title: 'Р’РµСЃ', value: `${profile.weightKg} РєРі` },
+    { icon: 'forecast', title: 'Р“РѕРґ СЂРѕР¶РґРµРЅРёСЏ', value: String(profile.birthYear || '') },
+    { icon: 'settings', title: 'РўРµР»РѕСЃР»РѕР¶РµРЅРёРµ', value: BODY_LABELS[profile.bodyType] || profile.bodyType },
   ];
 
   return (
     <SafeAreaView style={styles.flex}>
       <ScrollView contentContainerStyle={styles.container}>
-        <ScreenHeader title={t('profile')} subtitle="Ваш профиль и настройки" icon="profile" />
+        <ScreenHeader title={t('profile')} subtitle="Р’Р°С€ РїСЂРѕС„РёР»СЊ Рё РЅР°СЃС‚СЂРѕР№РєРё" icon="profile" />
 
         <Card>
           <TouchableOpacity style={styles.avatarRow} onPress={chooseAvatar} activeOpacity={0.8}>
@@ -106,8 +106,8 @@ export default function ProfileScreen() {
               </View>
             )}
             <View style={{ flex: 1, marginLeft: space.md }}>
-              <Text style={styles.avatarTitle}>{profile.name || 'Профиль'}</Text>
-              <Text style={styles.avatarHint}>Нажмите, чтобы изменить фото</Text>
+              <Text style={styles.avatarTitle}>{profile.name || 'РџСЂРѕС„РёР»СЊ'}</Text>
+              <Text style={styles.avatarHint}>РќР°Р¶РјРёС‚Рµ, С‡С‚РѕР±С‹ РёР·РјРµРЅРёС‚СЊ С„РѕС‚Рѕ</Text>
             </View>
           </TouchableOpacity>
           <View style={styles.divider} />
@@ -136,7 +136,7 @@ export default function ProfileScreen() {
           </View>
         </Card>
 
-        <Button title="Сбросить данные" icon="close" variant="danger" onPress={resetData} style={styles.spacer} />
+        <Button title="РЎР±СЂРѕСЃРёС‚СЊ РґР°РЅРЅС‹Рµ" icon="close" variant="danger" onPress={resetData} style={styles.spacer} />
       </ScrollView>
     </SafeAreaView>
   );
