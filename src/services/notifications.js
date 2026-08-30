@@ -52,11 +52,11 @@ export async function ensurePermissions() {
   }
 
   // Точные будильники: Android 12+ требует SCHEDULE_EXACT_ALARM.
+  // В Expo Go нет прямого JS-доступа к этому флагу, поэтому возвращаем
+  // консервативно "доступно по умолчанию" (best effort) — без фейковых вызовов.
   let exactAlarmAvailable = true;
   if (Platform.OS === 'android' && Platform.Version >= 31) {
-    exactAlarmAvailable = await Notifications.getExpoPushTokenCore?.() !== undefined;
-    // нативный метод недоступен в JS — используем общую оценку
-    exactAlarmAvailable = true; // default best-effort
+    exactAlarmAvailable = true; // best-effort; может быть недоступно у пользователя
   }
 
   return { granted, exactAlarmAvailable };
@@ -71,8 +71,12 @@ export async function schedulePrediction(opts) {
   const { granted } = await ensurePermissions();
   if (!granted) return null;
 
-  const lead = opts.leadMinutes || 0;
+  const lead = Math.max(0, opts.leadMinutes || 0);
   const ringAt = new Date(opts.predictedAtMs - lead * 60e3);
+  const now = Date.now();
+
+  // Точка звонка уже в прошлом — будильник бессмыслен.
+  if (ringAt.getTime() <= now) return null;
 
   const trigger = {
     type: Notifications.SchedulableTriggerInputTypes.DATE,

@@ -26,7 +26,6 @@ export async function ensureCalendarPermission() {
  * @returns {Promise<string|null>} calendarId
  */
 async function ensureCalendarId() {
-  // источник календарей различен на платформах
   const calendars = await Calendar.getCalendarsAsync(
     Platform.OS === 'ios' ? Calendar.EntityTypes.EVENT : Calendar.EntityTypes.EVENT
   );
@@ -34,17 +33,26 @@ async function ensureCalendarId() {
   let cal = calendars.find((c) => c.title === CALENDAR_TITLE);
   if (cal) return cal.id;
 
-  const defaultSource =
-    Platform.OS === 'ios'
-      ? { isLocalAccount: true, name: CALENDAR_TITLE }
-      : undefined;
+  let source = undefined;
+  let sourceId = undefined;
+
+  if (Platform.OS === 'ios') {
+    // iOS требует ссылку на реальный источник календаря.
+    try {
+      const defaultSource = await Calendar.getDefaultCalendarSourceAsync();
+      source = defaultSource;
+      sourceId = defaultSource && defaultSource.id;
+    } catch (e) {
+      // остаёмся с undefined — создание может не сработать, но не уроним
+    }
+  }
 
   const newId = await Calendar.createCalendarAsync({
     title: CALENDAR_TITLE,
     color: '#2f6fed',
     entityType: Calendar.EntityTypes.EVENT,
-    sourceId: undefined,
-    source: defaultSource,
+    sourceId,
+    source,
     name: CALENDAR_TITLE,
     ownerAccount: 'personal',
     accessLevel: Calendar.CalendarAccessLevel.OWNER,
