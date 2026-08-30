@@ -1,4 +1,4 @@
-import React, { useState, useCallback } from 'react';
+﻿import React, { useState, useCallback } from 'react';
 import {
   View,
   Text,
@@ -13,19 +13,22 @@ import { Calendar, LocaleConfig } from 'react-native-calendars';
 import { predict } from '../model/model.mjs';
 import { getProfile, getDefecations, getMeals } from '../store/storage';
 import { schedulePrediction, cancelPrediction, ensurePermissions } from '../services/notifications';
+import { getSettings } from '../store/storage';
+import { palette, type, space } from '../theme';
+import { ScreenHeader, Card, Button, Icon } from '../ui';
 
 LocaleConfig.locales['ru'] = {
   monthNames: [
-    'Январь', 'Февраль', 'Март', 'Апрель', 'Май', 'Июнь',
-    'Июль', 'Август', 'Сентябрь', 'Октябрь', 'Ноябрь', 'Декабрь',
+    'РЇРЅРІР°СЂСЊ', 'Р¤РµРІСЂР°Р»СЊ', 'РњР°СЂС‚', 'РђРїСЂРµР»СЊ', 'РњР°Р№', 'РСЋРЅСЊ',
+    'РСЋР»СЊ', 'РђРІРіСѓСЃС‚', 'РЎРµРЅС‚СЏР±СЂСЊ', 'РћРєС‚СЏР±СЂСЊ', 'РќРѕСЏР±СЂСЊ', 'Р”РµРєР°Р±СЂСЊ',
   ],
   monthNamesShort: [
-    'Янв', 'Фев', 'Мар', 'Апр', 'Май', 'Июн',
-    'Июл', 'Авг', 'Сен', 'Окт', 'Ноя', 'Дек',
+    'РЇРЅРІ', 'Р¤РµРІ', 'РњР°СЂ', 'РђРїСЂ', 'РњР°Р№', 'РСЋРЅ',
+    'РСЋР»', 'РђРІРі', 'РЎРµРЅ', 'РћРєС‚', 'РќРѕСЏ', 'Р”РµРє',
   ],
-  dayNames: ['Воскресенье', 'Понедельник', 'Вторник', 'Среда', 'Четверг', 'Пятница', 'Суббота'],
-  dayNamesShort: ['Вс', 'Пн', 'Вт', 'Ср', 'Чт', 'Пт', 'Сб'],
-  today: 'Сегодня',
+  dayNames: ['Р’РѕСЃРєСЂРµСЃРµРЅСЊРµ', 'РџРѕРЅРµРґРµР»СЊРЅРёРє', 'Р’С‚РѕСЂРЅРёРє', 'РЎСЂРµРґР°', 'Р§РµС‚РІРµСЂРі', 'РџСЏС‚РЅРёС†Р°', 'РЎСѓР±Р±РѕС‚Р°'],
+  dayNamesShort: ['Р’СЃ', 'РџРЅ', 'Р’С‚', 'РЎСЂ', 'Р§С‚', 'РџС‚', 'РЎР±'],
+  today: 'РЎРµРіРѕРґРЅСЏ',
 };
 LocaleConfig.defaultLocale = 'ru';
 
@@ -57,14 +60,14 @@ export default function CalendarScreen() {
 
     const marks = {};
 
-    // Дни с дефекациями — синяя точка
+    // Р”РЅРё СЃ РґРµС„РµРєР°С†РёСЏРјРё вЂ” СЃРёРЅСЏСЏ С‚РѕС‡РєР°
     defecations.forEach((d) => {
       const k = dayKey(d.timeMs);
       marks[k] = marks[k] || {};
       marks[k].dots = marks[k].dots || [];
       marks[k].dots.push({ key: 'def', color: '#27ae60' });
     });
-    // Дни с едой — оранжевая точка
+    // Р”РЅРё СЃ РµРґРѕР№ вЂ” РѕСЂР°РЅР¶РµРІР°СЏ С‚РѕС‡РєР°
     meals.forEach((m) => {
       const k = dayKey(m.timeMs);
       marks[k] = marks[k] || {};
@@ -72,7 +75,7 @@ export default function CalendarScreen() {
       marks[k].dots.push({ key: 'meal', color: '#f39c12' });
     });
 
-    // Окно достоверности low..high — мягкая подсветка диапазона (кроме прогноза)
+    // РћРєРЅРѕ РґРѕСЃС‚РѕРІРµСЂРЅРѕСЃС‚Рё low..high вЂ” РјСЏРіРєР°СЏ РїРѕРґСЃРІРµС‚РєР° РґРёР°РїР°Р·РѕРЅР° (РєСЂРѕРјРµ РїСЂРѕРіРЅРѕР·Р°)
     const today = todayStr();
     const lowKey = dayKey(p.lowMs);
     const highKey = dayKey(p.highMs);
@@ -85,31 +88,31 @@ export default function CalendarScreen() {
       if (k >= lowKey && k <= highKey && k !== dayKey(p.predictedAtMs)) {
         marks[k] = marks[k] || {};
         marks[k].customStyles = {
-          container: { backgroundColor: '#eaf1ff', borderRadius: 100 },
+          container: { backgroundColor: palette.accentSoft, borderRadius: 100 },
         };
       }
       cursor.setDate(cursor.getDate() + 1);
     }
 
-    // День прогноза — акцентный
+    // Р”РµРЅСЊ РїСЂРѕРіРЅРѕР·Р° вЂ” Р°РєС†РµРЅС‚РЅС‹Р№
     const pKey = dayKey(p.predictedAtMs);
     marks[pKey] = marks[pKey] || {};
     marks[pKey].customStyles = {
       container: {
-        backgroundColor: '#2f6fed',
+        backgroundColor: palette.accent,
         borderRadius: 100,
       },
-      text: { color: '#fff', fontWeight: '700' },
+      text: { color: palette.textOnAccent, fontWeight: '700' },
     };
     marks[pKey].selected = true;
 
-    // Сегодня — рамка
+    // РЎРµРіРѕРґРЅСЏ вЂ” СЂР°РјРєР°
     marks[today] = marks[today] || {};
     marks[today].customStyles = marks[today].customStyles || {};
     marks[today].customStyles.container = {
       ...(marks[today].customStyles.container || {}),
       borderWidth: 1,
-      borderColor: '#2f6fed',
+      borderColor: palette.accent,
     };
 
     setMarked(marks);
@@ -125,27 +128,29 @@ export default function CalendarScreen() {
     setBusy(true);
     try {
       if (!prediction) {
-        Alert.alert('Нет прогноза', 'Сначала соберите чуть больше записей.');
+        Alert.alert('РќРµС‚ РїСЂРѕРіРЅРѕР·Р°', 'РЎРЅР°С‡Р°Р»Р° СЃРѕР±РµСЂРёС‚Рµ С‡СѓС‚СЊ Р±РѕР»СЊС€Рµ Р·Р°РїРёСЃРµР№.');
         return;
       }
       const { granted } = await ensurePermissions();
       if (!granted) {
         Alert.alert(
-          'Нет доступа к уведомлениям',
-          'Разрешите уведомления в настройках, чтобы будильник работал.'
+          'РќРµС‚ РґРѕСЃС‚СѓРїР° Рє СѓРІРµРґРѕРјР»РµРЅРёСЏРј',
+          'Р Р°Р·СЂРµС€РёС‚Рµ СѓРІРµРґРѕРјР»РµРЅРёСЏ РІ РЅР°СЃС‚СЂРѕР№РєР°С…, С‡С‚РѕР±С‹ Р±СѓРґРёР»СЊРЅРёРє СЂР°Р±РѕС‚Р°Р».'
         );
         return;
       }
+      const settings = await getSettings();
       const when = new Date(prediction.predictedAtMs);
       await cancelPrediction();
       await schedulePrediction({
-        timeMs: prediction.predictedAtMs,
-        title: 'Прогноз дефекации',
-        body: `По расчётам — примерно ${when.toLocaleTimeString('ru-RU', { hour: '2-digit', minute: '2-digit' })}.`,
+        predictedAtMs: prediction.predictedAtMs,
+        leadMinutes: settings.alarmLeadMinutes,
+        title: 'РџСЂРѕРіРЅРѕР· РґРµС„РµРєР°С†РёРё',
+        body: `РџРѕ СЂР°СЃС‡С‘С‚Р°Рј вЂ” РїСЂРёРјРµСЂРЅРѕ ${when.toLocaleTimeString('ru-RU', { hour: '2-digit', minute: '2-digit' })}.`,
       });
-      Alert.alert('Готово', `Напоминание установлено на ${when.toLocaleDateString('ru-RU')} ~${when.toLocaleTimeString('ru-RU', { hour: '2-digit', minute: '2-digit' })}.`);
+      Alert.alert('Р“РѕС‚РѕРІРѕ', `РќР°РїРѕРјРёРЅР°РЅРёРµ СѓСЃС‚Р°РЅРѕРІР»РµРЅРѕ РЅР° ${when.toLocaleDateString('ru-RU')} ~${when.toLocaleTimeString('ru-RU', { hour: '2-digit', minute: '2-digit' })}.`);
     } catch (e) {
-      Alert.alert('Ошибка', e.message || 'Не удалось установить напоминание');
+      Alert.alert('РћС€РёР±РєР°', e.message || 'РќРµ СѓРґР°Р»РѕСЃСЊ СѓСЃС‚Р°РЅРѕРІРёС‚СЊ РЅР°РїРѕРјРёРЅР°РЅРёРµ');
     } finally {
       setBusy(false);
     }
@@ -159,7 +164,7 @@ export default function CalendarScreen() {
     <SafeAreaView style={styles.flex}>
       <ScrollView>
         <View style={styles.header}>
-          <Text style={styles.title}>Календарь</Text>
+          <ScreenHeader title="РљР°Р»РµРЅРґР°СЂСЊ" subtitle="РџСЂРѕРіРЅРѕР· Рё Р·Р°РїРёСЃРё" icon="calendar" />
         </View>
 
         <Calendar
@@ -167,38 +172,38 @@ export default function CalendarScreen() {
           markedDates={marked}
           current={todayStr()}
           theme={{
-            selectedDayBackgroundColor: '#2f6fed',
-            todayTextColor: '#2f6fed',
-            arrowColor: '#2f6fed',
+            selectedDayBackgroundColor: palette.accent,
+            todayTextColor: palette.accent,
+            arrowColor: palette.accent,
             textDayFontSize: 14,
             textMonthFontWeight: '700',
             textDayHeaderFontSize: 12,
-            textSectionTitleColor: '#888',
+            textSectionTitlecolor: palette.textMuted,
           }}
         />
 
         <View style={styles.legend}>
           <View style={styles.legendItem}>
             <View style={[styles.dot, { backgroundColor: '#27ae60' }]} />
-            <Text style={styles.legendText}>Дефекация</Text>
+            <Text style={styles.legendText}>Р”РµС„РµРєР°С†РёСЏ</Text>
           </View>
           <View style={styles.legendItem}>
             <View style={[styles.dot, { backgroundColor: '#f39c12' }]} />
-            <Text style={styles.legendText}>Приём пищи</Text>
+            <Text style={styles.legendText}>РџСЂРёС‘Рј РїРёС‰Рё</Text>
           </View>
           <View style={styles.legendItem}>
-            <View style={[styles.dot, { backgroundColor: '#2f6fed' }]} />
-            <Text style={styles.legendText}>Прогноз</Text>
+            <View style={[styles.dot, { backgroundColor: palette.accent }]} />
+            <Text style={styles.legendText}>РџСЂРѕРіРЅРѕР·</Text>
           </View>
           <View style={styles.legendItem}>
             <View style={styles.windowSwatch} />
-            <Text style={styles.legendText}>Окно достоверности</Text>
+            <Text style={styles.legendText}>РћРєРЅРѕ РґРѕСЃС‚РѕРІРµСЂРЅРѕСЃС‚Рё</Text>
           </View>
         </View>
 
         {prediction && (
           <View style={styles.predictionCard}>
-            <Text style={styles.cardLabel}>Прогноз следующей дефекации</Text>
+            <Text style={styles.cardLabel}>РџСЂРѕРіРЅРѕР· СЃР»РµРґСѓСЋС‰РµР№ РґРµС„РµРєР°С†РёРё</Text>
             <Text style={styles.cardDate}>
               {when.toLocaleDateString('ru-RU', { weekday: 'long', day: 'numeric', month: 'long' })}
             </Text>
@@ -206,7 +211,7 @@ export default function CalendarScreen() {
               ~{when.toLocaleTimeString('ru-RU', { hour: '2-digit', minute: '2-digit' })}
             </Text>
             <Text style={styles.cardRange}>
-              окно: {new Date(prediction.lowMs).toLocaleDateString('ru-RU', { day: 'numeric', month: 'short' })} —{' '}
+              РѕРєРЅРѕ: {new Date(prediction.lowMs).toLocaleDateString('ru-RU', { day: 'numeric', month: 'short' })} вЂ”{' '}
               {new Date(prediction.highMs).toLocaleDateString('ru-RU', { day: 'numeric', month: 'short' })}
             </Text>
             <TouchableOpacity
@@ -214,7 +219,7 @@ export default function CalendarScreen() {
               onPress={onSetAlarm}
               disabled={busy}
             >
-              <Text style={styles.alarmBtnText}>🔔 Поставить напоминание</Text>
+              <Text style={styles.alarmBtnText}>рџ”” РџРѕСЃС‚Р°РІРёС‚СЊ РЅР°РїРѕРјРёРЅР°РЅРёРµ</Text>
             </TouchableOpacity>
           </View>
         )}
@@ -224,9 +229,9 @@ export default function CalendarScreen() {
 }
 
 const styles = StyleSheet.create({
-  flex: { flex: 1, backgroundColor: '#f5f7fb' },
+  flex: { flex: 1, backgroundColor: palette.bg },
   header: { paddingHorizontal: 20, paddingTop: 16, paddingBottom: 8 },
-  title: { fontSize: 24, fontWeight: '700', color: '#111' },
+  title: { fontSize: 24, fontWeight: '700', color: palette.textPrimary },
   legend: {
     flexDirection: 'row',
     flexWrap: 'wrap',
@@ -235,25 +240,25 @@ const styles = StyleSheet.create({
   },
   legendItem: { flexDirection: 'row', alignItems: 'center', marginRight: 16, marginBottom: 8 },
   dot: { width: 10, height: 10, borderRadius: 5, marginRight: 6 },
-  windowSwatch: { width: 16, height: 10, borderRadius: 3, backgroundColor: '#eaf1ff', marginRight: 6 },
-  legendText: { fontSize: 12, color: '#555' },
+  windowSwatch: { width: 16, height: 10, borderRadius: 3, backgroundColor: palette.accentSoft, marginRight: 6 },
+  legendText: { fontSize: 12, color: palette.textSecondary },
   predictionCard: {
-    backgroundColor: '#fff',
+    backgroundColor: palette.surface,
     borderRadius: 16,
     padding: 20,
     margin: 20,
     marginTop: 8,
   },
-  cardLabel: { fontSize: 13, color: '#888', marginBottom: 6 },
-  cardDate: { fontSize: 18, fontWeight: '700', color: '#111', textTransform: 'capitalize' },
-  cardTime: { fontSize: 26, fontWeight: '800', color: '#2f6fed', marginTop: 2 },
-  cardRange: { fontSize: 13, color: '#777', marginTop: 4 },
+  cardLabel: { fontSize: 13, color: palette.textMuted, marginBottom: 6 },
+  cardDate: { fontSize: 18, fontWeight: '700', color: palette.textPrimary, textTransform: 'capitalize' },
+  cardTime: { fontSize: 26, fontWeight: '800', color: palette.accent, marginTop: 2 },
+  cardRange: { fontSize: 13, color: palette.textSecondary, marginTop: 4 },
   alarmBtn: {
     marginTop: 16,
-    backgroundColor: '#2f6fed',
+    backgroundColor: palette.accent,
     borderRadius: 12,
     padding: 14,
     alignItems: 'center',
   },
-  alarmBtnText: { color: '#fff', fontWeight: '600', fontSize: 15 },
+  alarmBtnText: { color: palette.textOnAccent, fontWeight: '600', fontSize: 15 },
 });

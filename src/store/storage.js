@@ -18,6 +18,7 @@ const KEYS = {
   meals: 'bt.meals',
   defecations: 'bt.defecations',
   settings: 'bt.settings',
+  lang: 'bt.lang',
 };
 
 const DEFAULT_SETTINGS = {
@@ -104,6 +105,17 @@ export async function saveSettings(patch) {
   const next = { ...current, ...patch };
   await writeJSON(KEYS.settings, next);
   return next;
+}
+
+// ---------------- Язык ----------------
+
+export async function getLang() {
+  return readJSON(KEYS.lang, null);
+}
+
+export async function saveLang(lang) {
+  await writeJSON(KEYS.lang, lang);
+  return lang;
 }
 
 // ---------------- Сброс ----------------

@@ -1,19 +1,12 @@
 import React, { useState, useCallback } from 'react';
-import {
-  View,
-  Text,
-  StyleSheet,
-  Switch,
-  ScrollView,
-  TouchableOpacity,
-  Alert,
-} from 'react-native';
+import { ScrollView, Text, Switch, StyleSheet, Alert } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { useFocusEffect } from '@react-navigation/native';
-import { getSettings, saveSettings } from '../store/storage';
-import { getProfile, getDefecations, getMeals } from '../store/storage';
+import { getSettings, saveSettings, getProfile, getDefecations, getMeals } from '../store/storage';
 import { predict } from '../model/model.mjs';
 import { applyReminder, cancelAlarm, calendarPermission } from '../services/alarmService';
+import { ScreenHeader, Card, Chip, Button, Section, Icon } from '../ui';
+import { palette, type, space } from '../theme';
 
 const LEAD_OPTIONS = [0, 5, 10, 15, 30, 60];
 
@@ -26,11 +19,7 @@ export default function SettingsScreen() {
     setSettings(s);
   }, []);
 
-  useFocusEffect(
-    useCallback(() => {
-      load();
-    }, [load])
-  );
+  useFocusEffect(useCallback(() => { load(); }, [load]));
 
   const persist = useCallback(async (patch) => {
     const next = await saveSettings(patch);
@@ -38,52 +27,58 @@ export default function SettingsScreen() {
     return next;
   }, []);
 
+  async function applyToPrediction() {
+    const profile = await getProfile();
+    const defecations = await getDefecations();
+    const meals = await getMeals();
+    return predict({ defecations, meals, profile, nowMs: Date.now() });
+  }
+
   async function onToggleAlarm(value) {
-    if (value) {
-      // при включении применяем текущий прогноз как напоминание
-      const profile = await getProfile();
-      const defecations = await getDefecations();
-      const meals = await getMeals();
-      const prediction = predict({ defecations, meals, profile, nowMs: Date.now() });
-      const s = await persist({ alarmEnabled: true });
-      await applyReminder({ prediction, settings: s });
-      Alert.alert('Включено', `Будильник установлен за ${s.alarmLeadMinutes} мин. до прогноза.`);
-    } else {
-      await persist({ alarmEnabled: false });
-      await cancelAlarm();
-      Alert.alert('Выключено', 'Будильник отменён.');
+    setBusy(true);
+    try {
+      if (value) {
+        const s = await persist({ alarmEnabled: true });
+        const prediction = await applyToPrediction();
+        await applyReminder({ prediction, settings: s });
+        Alert.alert('Включено', `Напоминание за ${s.alarmLeadMinutes === 0 ? 'точно к' : s.alarmLeadMinutes} мин. до прогноза.`);
+      } else {
+        await persist({ alarmEnabled: false });
+        await cancelAlarm();
+        Alert.alert('Выключено', 'Напоминание отменено.');
+      }
+    } finally {
+      setBusy(false);
     }
   }
 
   async function onChangeLead(min) {
     const s = await persist({ alarmLeadMinutes: min });
-    // переприменим, если будильник включён
     if (s.alarmEnabled) {
-      const profile = await getProfile();
-      const defecations = await getDefecations();
-      const meals = await getMeals();
-      const prediction = predict({ defecations, meals, profile, nowMs: Date.now() });
+      const prediction = await applyToPrediction();
       await applyReminder({ prediction, settings: s });
     }
   }
 
   async function onToggleCalendar(value) {
-    if (value) {
-      const ok = await calendarPermission();
-      if (!ok) {
-        Alert.alert('Нет доступа', 'Разрешите доступ к календарю в настройках системы.');
-        return;
+    setBusy(true);
+    try {
+      if (value) {
+        const ok = await calendarPermission();
+        if (!ok) {
+          Alert.alert('Нет доступа', 'Разрешите доступ к календарю в настройках системы.');
+          return;
+        }
+        const s = await persist({ calendarEnabled: true });
+        const prediction = await applyToPrediction();
+        await applyReminder({ prediction, settings: s });
+        Alert.alert('Календарь включён', 'Событие прогноза добавлено в системный календарь.');
+      } else {
+        await persist({ calendarEnabled: false });
+        Alert.alert('Календарь выключен');
       }
-      const s = await persist({ calendarEnabled: true });
-      const profile = await getProfile();
-      const defecations = await getDefecations();
-      const meals = await getMeals();
-      const prediction = predict({ defecations, meals, profile, nowMs: Date.now() });
-      await applyReminder({ prediction, settings: s });
-      Alert.alert('Календарь включён', 'Событие прогноза добавлено в системный календарь.');
-    } else {
-      await persist({ calendarEnabled: false });
-      Alert.alert('Календарь выключен');
+    } finally {
+      setBusy(false);
     }
   }
 
@@ -98,94 +93,105 @@ export default function SettingsScreen() {
   return (
     <SafeAreaView style={styles.flex}>
       <ScrollView contentContainerStyle={styles.container}>
-        <Text style={styles.title}>Настройки</Text>
+        <ScreenHeader title="Настройки" subtitle="Напоминания и календарь" icon="settings" />
 
-        <View style={styles.card}>
-          <View style={styles.row}>
-            <View style={{ flex: 1 }}>
-              <Text style={styles.rowTitle}>Напоминание-будильник</Text>
-              <Text style={styles.rowDesc}>
-                Звонок-уведомление перед прогнозом. По желанию.
-              </Text>
-            </View>
-            <Switch value={settings.alarmEnabled} onValueChange={onToggleAlarm} />
-          </View>
+        <Card>
+          <Row
+            icon="alarm"
+            title="Напоминание"
+            desc="Громкое уведомление перед прогнозом. По желанию."
+            control={
+              <Switch value={settings.alarmEnabled} onValueChange={onToggleAlarm} disabled={busy}
+                trackColor={{ false: palette.surfaceAlt, true: palette.accent }} thumbColor={palette.surface} />
+            }
+          />
 
           {settings.alarmEnabled && (
-            <View style={styles.leadBlock}>
-              <Text style={styles.rowTitle}>Звонить за, минут</Text>
+            <>
+              <Text style={styles.subNote}>Звонить за, минут</Text>
               <View style={styles.chips}>
                 {LEAD_OPTIONS.map((m) => (
-                  <TouchableOpacity
+                  <Chip
                     key={m}
-                    style={[
-                      styles.chip,
-                      settings.alarmLeadMinutes === m && styles.chipActive,
-                    ]}
+                    label={m === 0 ? '0 (точно)' : `${m}`}
+                    active={settings.alarmLeadMinutes === m}
                     onPress={() => onChangeLead(m)}
-                  >
-                    <Text
-                      style={[
-                        styles.chipText,
-                        settings.alarmLeadMinutes === m && styles.chipTextActive,
-                      ]}
-                    >
-                      {m === 0 ? '0 (точно)' : m}
-                    </Text>
-                  </TouchableOpacity>
+                  />
                 ))}
               </View>
-            </View>
+            </>
           )}
-        </View>
+        </Card>
 
-        <View style={styles.card}>
-          <View style={styles.row}>
-            <View style={{ flex: 1 }}>
-              <Text style={styles.rowTitle}>Событие в системном календаре</Text>
-              <Text style={styles.rowDesc}>
-                Добавлять прогноз как событие в календарь телефона.
-              </Text>
-            </View>
-            <Switch value={settings.calendarEnabled} onValueChange={onToggleCalendar} />
-          </View>
-        </View>
+        <Card>
+          <Row
+            icon="calendar"
+            title="Событие в календаре"
+            desc="Добавлять прогноз как событие в системный календарь."
+            control={
+              <Switch value={settings.calendarEnabled} onValueChange={onToggleCalendar} disabled={busy}
+                trackColor={{ false: palette.surfaceAlt, true: palette.accent }} thumbColor={palette.surface} />
+            }
+          />
+        </Card>
 
-        <Text style={styles.note}>
-          Примечание: в экспресс-версии будильник работает как громкое уведомление.
-          Полный системный звонок появится в собранной версии приложения.
-        </Text>
+        <Button
+          title="Применить сейчас"
+          icon="plus"
+          loading={busy}
+          onPress={async () => {
+            setBusy(true);
+            try {
+              const s = await getSettings();
+              const prediction = await applyToPrediction();
+              if (s.alarmEnabled || s.calendarEnabled) {
+                await applyReminder({ prediction, settings: s });
+                Alert.alert('Применено', 'Напоминание и/или событие календаря обновлены под текущий прогноз.');
+              } else {
+                Alert.alert('Ничего не включено', 'Включите напоминание или календарь выше.');
+              }
+            } finally { setBusy(false); }
+          }}
+          style={styles.spacer}
+        />
+
+        <View style={styles.noteBox}>
+          <Text style={styles.note}>
+            В экспресс-версии напоминание работает как громкое уведомление. Полный системный
+            звонок появится в собранной версии приложения.
+          </Text>
+        </View>
       </ScrollView>
     </SafeAreaView>
   );
 }
 
+function Row({ icon, title, desc, control }) {
+  return (
+    <View style={styles.row}>
+      <View style={[styles.iconWrap, { backgroundColor: palette.accentSoft }]}>
+        <Icon name={icon} size={20} color={palette.accent} />
+      </View>
+      <View style={{ flex: 1, paddingHorizontal: space.md }}>
+        <Text style={styles.rowTitle}>{title}</Text>
+        <Text style={styles.rowDesc}>{desc}</Text>
+      </View>
+      {control}
+    </View>
+  );
+}
+
 const styles = StyleSheet.create({
-  flex: { flex: 1, backgroundColor: '#f5f7fb' },
-  container: { padding: 20, paddingTop: 16 },
-  loading: { textAlign: 'center', marginTop: 60, color: '#999' },
-  title: { fontSize: 24, fontWeight: '700', color: '#111', marginBottom: 16 },
-  card: {
-    backgroundColor: '#fff',
-    borderRadius: 16,
-    padding: 16,
-    marginBottom: 14,
-  },
+  flex: { flex: 1, backgroundColor: palette.bg },
+  container: { padding: space.xl, paddingTop: 16 },
+  loading: { textAlign: 'center', marginTop: 60, color: palette.textMuted },
   row: { flexDirection: 'row', alignItems: 'center' },
-  rowTitle: { fontSize: 16, fontWeight: '600', color: '#111' },
-  rowDesc: { fontSize: 13, color: '#888', marginTop: 4 },
-  leadBlock: { marginTop: 16 },
-  chips: { flexDirection: 'row', flexWrap: 'wrap', marginTop: 10 },
-  chip: {
-    paddingHorizontal: 14,
-    paddingVertical: 8,
-    borderRadius: 20,
-    backgroundColor: '#f2f4f8',
-    marginRight: 8,
-    marginBottom: 8,
-  },
-  chipActive: { backgroundColor: '#2f6fed' },
-  chipText: { fontSize: 14, color: '#333' },
-  chipTextActive: { color: '#fff', fontWeight: '600' },
-  note: { fontSize: 12, color: '#999', marginTop: 4, lineHeight: 18 },
+  iconWrap: { width: 44, height: 44, borderRadius: 14, alignItems: 'center', justifyContent: 'center' },
+  rowTitle: { fontSize: 16, fontWeight: type.semibold, color: palette.textPrimary },
+  rowDesc: { fontSize: 13, color: palette.textSecondary, marginTop: 3, lineHeight: 18 },
+  subNote: { fontSize: type.label, color: palette.textSecondary, fontWeight: type.semibold, marginTop: space.lg },
+  chips: { flexDirection: 'row', flexWrap: 'wrap', marginTop: space.sm },
+  spacer: { marginTop: space.md },
+  noteBox: { backgroundColor: palette.infoSoft, borderRadius: 14, padding: space.md, marginTop: space.md },
+  note: { fontSize: type.caption, color: palette.textSecondary, lineHeight: 17 },
 });

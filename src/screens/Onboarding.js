@@ -2,14 +2,15 @@ import React, { useState } from 'react';
 import {
   View,
   Text,
-  TextInput,
-  TouchableOpacity,
   ScrollView,
   StyleSheet,
   KeyboardAvoidingView,
   Platform,
 } from 'react-native';
+import { SafeAreaView } from 'react-native-safe-area-context';
 import { saveProfile } from '../store/storage';
+import { ScreenHeader, Chip, Button, TextField, Card, Icon } from '../ui';
+import { palette, type, space } from '../theme';
 
 const BODY_TYPES = [
   { key: 'asthenic', label: 'Астеник (худощавый)' },
@@ -45,125 +46,97 @@ export default function Onboarding({ onDone }) {
   }
 
   return (
-    <KeyboardAvoidingView
-      style={styles.flex}
-      behavior={Platform.OS === 'ios' ? 'padding' : undefined}
-    >
-      <ScrollView contentContainerStyle={styles.container}>
-        <Text style={styles.title}>Добро пожаловать</Text>
-        <Text style={styles.subtitle}>
-          Заполните данные — они нужны для точного прогноза дефекации.
-        </Text>
+    <SafeAreaView style={styles.flex}>
+      <KeyboardAvoidingView
+        style={styles.flex}
+        behavior={Platform.OS === 'ios' ? 'padding' : undefined}
+      >
+        <ScrollView contentContainerStyle={styles.container}>
+          <ScreenHeader
+            title="Добро пожаловать"
+            subtitle="Эти данные нужны для точного прогноза. Никуда не отправляются."
+            icon="profile"
+          />
 
-        <Text style={styles.label}>Пол</Text>
-        <View style={styles.row}>
-          {['male', 'female'].map((s) => (
-            <TouchableOpacity
-              key={s}
-              style={[styles.chip, sex === s && styles.chipActive]}
-              onPress={() => setSex(s)}
-            >
-              <Text style={[styles.chipText, sex === s && styles.chipTextActive]}>
-                {s === 'male' ? 'Мужской' : 'Женский'}
-              </Text>
-            </TouchableOpacity>
-          ))}
-        </View>
+          <Text style={styles.stepLabel}>Пол</Text>
+          <View style={styles.row}>
+            <Chip label="Мужской" active={sex === 'male'} onPress={() => setSex('male')} style={styles.flexChip} />
+            <Chip label="Женский" active={sex === 'female'} onPress={() => setSex('female')} style={styles.flexChip} />
+          </View>
 
-        <Text style={styles.label}>Рост, см</Text>
-        <TextInput
-          style={styles.input}
-          keyboardType="numeric"
-          value={heightCm}
-          onChangeText={setHeightCm}
-          placeholder="Например 175"
-        />
+          <TextField
+            label="Рост, см"
+            keyboardType="numeric"
+            value={heightCm}
+            onChangeText={setHeightCm}
+            placeholder="Например 175"
+          />
+          <TextField
+            label="Вес, кг"
+            keyboardType="numeric"
+            value={weightKg}
+            onChangeText={setWeightKg}
+            placeholder="Например 70"
+          />
+          <TextField
+            label="Год рождения"
+            keyboardType="numeric"
+            value={birthYear}
+            onChangeText={setBirthYear}
+            placeholder="Например 1990"
+          />
 
-        <Text style={styles.label}>Вес, кг</Text>
-        <TextInput
-          style={styles.input}
-          keyboardType="numeric"
-          value={weightKg}
-          onChangeText={setWeightKg}
-          placeholder="Например 70"
-        />
-
-        <Text style={styles.label}>Год рождения</Text>
-        <TextInput
-          style={styles.input}
-          keyboardType="numeric"
-          value={birthYear}
-          onChangeText={setBirthYear}
-          placeholder="Например 1990"
-        />
-
-        <Text style={styles.label}>Тип телосложения</Text>
-        {BODY_TYPES.map((b) => (
-          <TouchableOpacity
-            key={b.key}
-            style={[styles.chipFull, bodyType === b.key && styles.chipActive]}
-            onPress={() => setBodyType(b.key)}
-          >
-            <Text style={[styles.chipText, bodyType === b.key && styles.chipTextActive]}>
+          <Text style={styles.stepLabel}>Тип телосложения</Text>
+          {BODY_TYPES.map((b) => (
+            <TouchableChip key={b.key} active={bodyType === b.key} onPress={() => setBodyType(b.key)}>
               {b.label}
-            </Text>
-          </TouchableOpacity>
-        ))}
+            </TouchableChip>
+          ))}
 
-        <TouchableOpacity
-          style={[styles.button, !ready && styles.buttonDisabled]}
-          disabled={!ready}
-          onPress={handleSave}
-        >
-          <Text style={styles.buttonText}>Готово</Text>
-        </TouchableOpacity>
-      </ScrollView>
-    </KeyboardAvoidingView>
+          <Button title="Готово" disabled={!ready} onPress={handleSave} style={styles.button} />
+          {!ready && (
+            <Text style={styles.hint}>Заполните все поля, чтобы продолжить.</Text>
+          )}
+        </ScrollView>
+      </KeyboardAvoidingView>
+    </SafeAreaView>
+  );
+}
+
+function TouchableChip({ active, onPress, children }) {
+  return (
+    <Card
+      tone={active ? 'info' : 'default'}
+      style={styles.chipFull}
+    >
+      <View
+        style={styles.chipFullInner}
+        accessibilityRole="button"
+      >
+        <Text style={[styles.chipFullText, active && { color: palette.accent, fontWeight: type.semibold }]}>
+          {children}
+        </Text>
+        {active && <Icon name="check" size={18} color={palette.accent} />}
+      </View>
+    </Card>
   );
 }
 
 const styles = StyleSheet.create({
-  flex: { flex: 1, backgroundColor: '#f5f7fb' },
-  container: { padding: 24, paddingTop: 60 },
-  title: { fontSize: 26, fontWeight: '700', color: '#111' },
-  subtitle: { fontSize: 15, color: '#555', marginTop: 6, marginBottom: 24 },
-  label: { fontSize: 13, color: '#666', marginTop: 16, marginBottom: 8 },
+  flex: { flex: 1, backgroundColor: palette.bg },
+  container: { padding: space.xl, paddingTop: 28 },
+  stepLabel: {
+    fontSize: type.label,
+    fontWeight: type.semibold,
+    color: palette.textSecondary,
+    marginTop: space.lg,
+    marginBottom: space.sm,
+  },
   row: { flexDirection: 'row', gap: 12 },
-  chip: {
-    flex: 1,
-    padding: 14,
-    borderRadius: 12,
-    backgroundColor: '#fff',
-    borderWidth: 1,
-    borderColor: '#ddd',
-    alignItems: 'center',
-  },
-  chipFull: {
-    padding: 14,
-    borderRadius: 12,
-    backgroundColor: '#fff',
-    borderWidth: 1,
-    borderColor: '#ddd',
-    marginBottom: 8,
-  },
-  chipActive: { borderColor: '#2f6fed', backgroundColor: '#eaf1ff' },
-  chipText: { fontSize: 15, color: '#333' },
-  chipTextActive: { color: '#2f6fed', fontWeight: '600' },
-  input: {
-    backgroundColor: '#fff',
-    borderWidth: 1,
-    borderColor: '#ddd',
-    borderRadius: 12,
-    padding: 14,
-    fontSize: 16,
-  },
-  button: {
-    marginTop: 28,
-    backgroundColor: '#2f6fed',
-    padding: 16,
-    borderRadius: 14,
-    alignItems: 'center',
-  },
-  buttonDisabled: { opacity: 0.5 },
-  buttonText: { color: '#fff', fontSize: 17, fontWeight: '600' },
+  flexChip: { flex: 1 },
+  chipFull: { marginBottom: space.sm, paddingVertical: space.md },
+  chipFullInner: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between' },
+  chipFullText: { fontSize: type.body, color: palette.textPrimary },
+  button: { marginTop: space.xxl },
+  hint: { textAlign: 'center', color: palette.textMuted, fontSize: type.caption, marginTop: space.sm },
 });

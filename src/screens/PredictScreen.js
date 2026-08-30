@@ -5,21 +5,22 @@ import {
   StyleSheet,
   ScrollView,
   RefreshControl,
-  TouchableOpacity,
   Alert,
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { useFocusEffect } from '@react-navigation/native';
 import { predict } from '../model/model.mjs';
-import { getProfile, getDefecations, getMeals } from '../store/storage';
+import { getProfile, getDefecations, getMeals, getSettings } from '../store/storage';
 import { schedulePrediction, cancelPrediction, ensurePermissions } from '../services/notifications';
+import { ScreenHeader, Card, Button, Section, Icon } from '../ui';
+import { palette, type, space } from '../theme';
 
 const DAY = 24 * 3600e3;
 
-function fmtTime(ms) {
+function fmtTime(ms, locale) {
   const d = new Date(ms);
-  const date = d.toLocaleDateString('ru-RU', { day: 'numeric', month: 'long', weekday: 'long' });
-  const time = d.toLocaleTimeString('ru-RU', { hour: '2-digit', minute: '2-digit' });
+  const date = d.toLocaleDateString(locale, { day: 'numeric', month: 'long', weekday: 'long' });
+  const time = d.toLocaleTimeString(locale, { hour: '2-digit', minute: '2-digit' });
   return { date, time };
 }
 
@@ -27,13 +28,17 @@ export default function PredictScreen() {
   const [prediction, setPrediction] = useState(null);
   const [refreshing, setRefreshing] = useState(false);
   const [busy, setBusy] = useState(false);
+  const [locale, setLocale] = useState('ru-RU');
+  const [lead, setLead] = useState(15);
 
   const load = useCallback(async () => {
     const profile = await getProfile();
     const defecations = await getDefecations();
     const meals = await getMeals();
+    const settings = await getSettings();
     const p = predict({ defecations, meals, profile, nowMs: Date.now() });
     setPrediction(p);
+    setLead(settings.alarmLeadMinutes);
   }, []);
 
   useFocusEffect(
@@ -62,11 +67,15 @@ export default function PredictScreen() {
       const when = new Date(prediction.predictedAtMs);
       await cancelPrediction();
       await schedulePrediction({
-        timeMs: prediction.predictedAtMs,
+        predictedAtMs: prediction.predictedAtMs,
+        leadMinutes: lead,
         title: 'Прогноз дефекации',
         body: `По расчётам — примерно ${when.toLocaleTimeString('ru-RU', { hour: '2-digit', minute: '2-digit' })}.`,
       });
-      Alert.alert('Готово', `Напоминание на ${when.toLocaleDateString('ru-RU')} ~${when.toLocaleTimeString('ru-RU', { hour: '2-digit', minute: '2-digit' })}.`);
+      Alert.alert(
+        'Готово',
+        `Напоминание за ${lead} мин. на ${when.toLocaleDateString('ru-RU')} ~${when.toLocaleTimeString('ru-RU', { hour: '2-digit', minute: '2-digit' })}.`
+      );
     } catch (e) {
       Alert.alert('Ошибка', e.message || 'Не удалось установить напоминание');
     } finally {
@@ -82,9 +91,9 @@ export default function PredictScreen() {
     );
   }
 
-  const main = fmtTime(prediction.predictedAtMs);
-  const low = fmtTime(prediction.lowMs);
-  const high = fmtTime(prediction.highMs);
+  const main = fmtTime(prediction.predictedAtMs, locale);
+  const low = fmtTime(prediction.lowMs, locale);
+  const high = fmtTime(prediction.highMs, locale);
 
   const sourceLabel =
     prediction.source === 'history'
@@ -93,7 +102,6 @@ export default function PredictScreen() {
         ? 'на основе небольшой истории'
         : 'физиологический дефолт (пока мало данных)';
 
-  // Сдвиг интервала на относительную шкалу "через X"
   const inHours = prediction.intervalH;
   const shiftText =
     inHours < 24
@@ -103,91 +111,121 @@ export default function PredictScreen() {
   return (
     <SafeAreaView style={styles.flex}>
       <ScrollView
-        refreshControl={
-          <RefreshControl refreshing={refreshing} onRefresh={onRefresh} />
-        }
+        refreshControl={<RefreshControl refreshing={refreshing} onRefresh={onRefresh} />}
         contentContainerStyle={styles.container}
       >
-        <Text style={styles.title}>Прогноз</Text>
+        <ScreenHeader title="Прогноз" subtitle="Следующая дефекация" icon="forecast" />
 
-        <View style={styles.card}>
-          <Text style={styles.cardLabel}>Следующая дефекация вероятнее всего</Text>
-          <Text style={styles.bigDate}>{main.date}</Text>
-          <Text style={styles.bigTime}>~{main.time}</Text>
-          <Text style={styles.shift}>{shiftText}</Text>
-          <Text style={styles.source}>Метод: {sourceLabel}</Text>
-        </View>
-
-        <View style={styles.card}>
-          <Text style={styles.cardLabel}>Окно достоверности</Text>
-          <Text style={styles.windowText}>
-            {low.date}{' '}{low.time} — {high.date}{' '}{high.time}
+        <Card tone="accent">
+          <Text style={[styles.accentLabel, { color: palette.accentSoft }]}>
+            Следующая дефекация вероятнее всего
           </Text>
-          <Text style={styles.confidence}>± ~{prediction.confidenceH} ч</Text>
-        </View>
+          <Text style={styles.accentDate}>{main.date}</Text>
+          <View style={styles.accentTimeRow}>
+            <Text style={styles.accentTime}>~{main.time}</Text>
+            <Text style={[styles.shift, { color: palette.accentSoft }]}>{shiftText}</Text>
+          </View>
+          <View style={styles.sourceRow}>
+            <Icon name="forecast" size={15} color={palette.accentSoft} />
+            <Text style={[styles.source, { color: palette.accentSoft }]}>Метод: {sourceLabel}</Text>
+          </View>
+        </Card>
 
-        <View style={styles.card}>
-          <Text style={styles.cardLabel}>Факторы модели</Text>
+        <Section title="Окно достоверности" />
+        <Card tone="default" style={styles.compactCard}>
+          <View style={styles.windowRow}>
+            <View style={{ flex: 1 }}>
+              <Text style={styles.windowCap}>{low.date}</Text>
+              <Text style={[styles.windowTime, { color: palette.forecastLow }]}>~{low.time}</Text>
+            </View>
+            <Text style={styles.windowDash}>—</Text>
+            <View style={{ flex: 1, alignItems: 'flex-end' }}>
+              <Text style={styles.windowCap}>{high.date}</Text>
+              <Text style={[styles.windowTime, { color: palette.forecastMid }]}>~{high.time}</Text>
+            </View>
+          </View>
+          <Text style={styles.confidence}>± ~{prediction.confidenceH} ч</Text>
+        </Card>
+
+        <Section title="Что на это влияет" />
+        <Card tone="default">
           {[
-            { key: 'base', label: 'Базовый интервал (история)', value: prediction.factors.base, unit: 'ч' },
-            { key: 'body', label: 'Тело (пол/ИМТ/возраст)', value: prediction.factors.body, unit: '×' },
+            { key: 'base', label: 'Ваш ритм (история)', value: prediction.factors.base, unit: ' ч' },
+            { key: 'body', label: 'Тело', value: prediction.factors.body, unit: '×' },
             { key: 'food', label: 'Еда (последние 48 ч)', value: prediction.factors.food, unit: '×' },
             { key: 'rhythm', label: 'Суточный ритм', value: prediction.factors.rhythm, unit: '×' },
           ].map((f) => (
             <View key={f.key} style={styles.factorRow}>
               <Text style={styles.factorLabel}>{f.label}</Text>
-              <Text style={styles.factorValue}>
-                {f.value}{f.unit}
-              </Text>
+              <View style={styles.factorPill}>
+                <Text style={styles.factorValue}>
+                  {f.value}{f.unit}
+                </Text>
+              </View>
             </View>
           ))}
-        </View>
+        </Card>
 
-        <TouchableOpacity
-          style={[styles.alarmBtn, busy && { opacity: 0.6 }]}
-          disabled={busy}
+        <Button
+          title={busy ? 'Устанавливаем…' : `🔔 Напомнить за ${lead} мин.`}
+          icon="alarm"
+          loading={busy}
           onPress={onSetAlarm}
-        >
-          <Text style={styles.alarmBtnText}>🔔 Поставить напоминание</Text>
-        </TouchableOpacity>
+          style={styles.spacer}
+        />
+        <Text style={styles.hint}>
+          Напоминание: указано в настройках. Время звонка — перед прогнозом.
+        </Text>
       </ScrollView>
     </SafeAreaView>
   );
 }
 
 const styles = StyleSheet.create({
-  flex: { flex: 1, backgroundColor: '#f5f7fb' },
-  container: { padding: 20, paddingTop: 16 },
-  loading: { textAlign: 'center', marginTop: 60, color: '#999' },
-  title: { fontSize: 24, fontWeight: '700', color: '#111', marginBottom: 16 },
-  card: {
-    backgroundColor: '#fff',
-    borderRadius: 16,
-    padding: 20,
-    marginBottom: 14,
+  flex: { flex: 1, backgroundColor: palette.bg },
+  container: { padding: space.xl, paddingTop: 16 },
+  loading: { textAlign: 'center', marginTop: 60, color: palette.textMuted },
+
+  // accent card
+  accentLabel: { fontSize: type.label, fontWeight: type.medium, marginBottom: 8 },
+  accentDate: {
+    fontSize: 21,
+    fontWeight: type.heavy,
+    color: palette.textOnAccent,
+    textTransform: 'capitalize',
   },
-  cardLabel: { fontSize: 13, color: '#888', marginBottom: 8 },
-  bigDate: { fontSize: 20, fontWeight: '700', color: '#111', textTransform: 'capitalize' },
-  bigTime: { fontSize: 30, fontWeight: '800', color: '#2f6fed', marginTop: 4 },
-  shift: { fontSize: 14, color: '#333', marginTop: 8 },
-  source: { fontSize: 12, color: '#999', marginTop: 8 },
-  windowText: { fontSize: 16, color: '#222', lineHeight: 22 },
-  confidence: { fontSize: 13, color: '#2f6fed', marginTop: 6 },
+  accentTimeRow: { flexDirection: 'row', alignItems: 'center', marginTop: 6 },
+  accentTime: { fontSize: 32, fontWeight: type.heavy, color: palette.textOnAccent },
+  shift: { fontSize: type.body, fontWeight: type.semibold, marginLeft: 12 },
+  sourceRow: { flexDirection: 'row', alignItems: 'center', marginTop: 14 },
+  source: { fontSize: 12, marginLeft: 6 },
+
+  // window card
+  compactCard: { paddingTop: 14, paddingBottom: 14 },
+  windowRow: { flexDirection: 'row', alignItems: 'center' },
+  windowCap: { fontSize: 13, color: palette.textSecondary },
+  windowTime: { fontSize: 19, fontWeight: type.semibold, marginTop: 2 },
+  windowDash: { marginHorizontal: 10, color: palette.textMuted, fontSize: 18 },
+  confidence: { textAlign: 'center', marginTop: 12, color: palette.accent, fontWeight: type.semibold },
+
+  // factors
   factorRow: {
     flexDirection: 'row',
-    justifyContent: 'space-between',
-    paddingVertical: 8,
-    borderBottomWidth: StyleSheet.hairlineWidth,
-    borderBottomColor: '#eee',
-  },
-  factorLabel: { fontSize: 14, color: '#555', flex: 1, paddingRight: 12 },
-  factorValue: { fontSize: 14, fontWeight: '600', color: '#2f6fed' },
-  alarmBtn: {
-    backgroundColor: '#2f6fed',
-    borderRadius: 14,
-    padding: 16,
     alignItems: 'center',
-    marginBottom: 20,
+    justifyContent: 'space-between',
+    paddingVertical: 9,
+    borderBottomWidth: StyleSheet.hairlineWidth,
+    borderBottomColor: palette.divider,
   },
-  alarmBtnText: { color: '#fff', fontWeight: '600', fontSize: 16 },
+  factorLabel: { fontSize: type.body, color: palette.textPrimary, flex: 1, paddingRight: 12 },
+  factorPill: {
+    backgroundColor: palette.accentSoft,
+    borderRadius: 10,
+    paddingHorizontal: 10,
+    paddingVertical: 4,
+  },
+  factorValue: { fontSize: 14, fontWeight: type.semibold, color: palette.accent },
+
+  spacer: { marginTop: space.md, marginBottom: space.sm },
+  hint: { fontSize: type.caption, color: palette.textMuted, textAlign: 'center', marginBottom: 20 },
 });
