@@ -123,3 +123,97 @@ export async function saveLang(lang) {
 export async function clearAll() {
   await storageBackend.multiRemove([KEYS.profile, KEYS.meals, KEYS.defecations, KEYS.settings]);
 }
+
+// ---------------- Сеттеры (для импорта) ----------------
+
+export async function saveMeals(meals) {
+  await writeJSON(KEYS.meals, meals);
+  return meals;
+}
+
+export async function saveDefecations(defecations) {
+  await writeJSON(KEYS.defecations, defecations);
+  return defecations;
+}
+
+// ---------------- Экспорт / импорт (JSON) ----------------
+
+export const DATA_VERSION = 1;
+
+/**
+ * Собирает все данные приложения в один JSON-объект (профиль, приёмы пищи,
+ * дефекации, настройки, язык). Для резервного копирования и переноса.
+ */
+export async function exportData() {
+  const [profile, meals, defecations, settings, lang] = await Promise.all([
+    getProfile(),
+    getMeals(),
+    getDefecations(),
+    getSettings(),
+    getLang(),
+  ]);
+  return {
+    app: 'bathroomtracker',
+    version: DATA_VERSION,
+    exportedAt: new Date().toISOString(),
+    profile,
+    meals,
+    defecations,
+    settings,
+    lang,
+  };
+}
+
+/**
+ * Валидирует и применяет данные из JSON (см. exportData). Опционально
+ * заменяет существующие записи (replace) или только восстанавливает
+ * недостающее (merge, по умолчанию). Возвращает применённый объект
+ * или бросает ошибку при невалидном формате.
+ */
+export async function importData(json, { replace = false } = {}) {
+  if (!json || typeof json !== 'object' || json.app !== 'bathroomtracker') {
+    throw new Error('Не удалось распознать файл данных.');
+  }
+
+  const next = {};
+
+  if (json.profile && typeof json.profile === 'object') {
+    next.profile = json.profile;
+  } else if (replace) {
+    next.profile = null;
+  }
+
+  const meals = Array.isArray(json.meals) ? json.meals : [];
+  const defecations = Array.isArray(json.defecations) ? json.defecations : [];
+
+  if (replace) {
+    next.meals = meals;
+    next.defecations = defecations;
+  } else {
+    const [curMeals, curDef] = await Promise.all([getMeals(), getDefecations()]);
+    const mealIds = new Set(curMeals.map((m) => m && m.id));
+    const defIds = new Set(curDef.map((d) => d && d.id));
+    next.meals = [...curMeals, ...meals.filter((m) => m && !mealIds.has(m.id))];
+    next.defecations = [...curDef, ...defecations.filter((d) => d && !defIds.has(d.id))];
+  }
+
+  if (json.settings && typeof json.settings === 'object') {
+    next.settings = json.settings;
+  }
+
+  const apply = [];
+  if ('profile' in next) {
+    if (next.profile) apply.push(writeJSON(KEYS.profile, next.profile));
+    else apply.push(storageBackend.removeItem(KEYS.profile));
+  }
+  if ('meals' in next) apply.push(writeJSON(KEYS.meals, next.meals));
+  if ('defecations' in next) apply.push(writeJSON(KEYS.defecations, next.defecations));
+  if ('settings' in next) apply.push(writeJSON(KEYS.settings, next.settings));
+  if (typeof json.lang === 'string') {
+    next.lang = json.lang;
+    apply.push(writeJSON(KEYS.lang, json.lang));
+  }
+  await Promise.all(apply);
+
+  return next;
+}

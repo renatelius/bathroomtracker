@@ -1,11 +1,11 @@
 import React, { useState, useCallback } from 'react';
-import { ScrollView, Text, Switch, StyleSheet, Alert } from 'react-native';
+import { ScrollView, Text, Switch, StyleSheet, Alert, Platform } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { useFocusEffect } from '@react-navigation/native';
-import { getSettings, saveSettings, getProfile, getDefecations, getMeals } from '../store/storage';
+import { getSettings, saveSettings, getProfile, getDefecations, getMeals, exportData, importData } from '../store/storage';
 import { predict } from '../model/model.mjs';
 import { applyReminder, cancelAlarm, calendarPermission } from '../services/alarmService';
-import { ScreenHeader, Card, Chip, Button, Section, Icon } from '../ui';
+import { ScreenHeader, Card, Chip, Button, Section, TextField, Icon } from '../ui';
 import { useThemeColors, type, space } from '../theme';
 
 const LEAD_OPTIONS = [0, 5, 10, 15, 30, 60];
@@ -14,6 +14,9 @@ export default function SettingsScreen() {
   const palette = useThemeColors();
   const [settings, setSettings] = useState(null);
   const [busy, setBusy] = useState(false);
+  const [exportedText, setExportedText] = useState('');
+  const [importText, setImportText] = useState('');
+  const [importing, setImporting] = useState(false);
 
   const load = useCallback(async () => {
     const s = await getSettings();
@@ -80,6 +83,65 @@ export default function SettingsScreen() {
       }
     } finally {
       setBusy(false);
+    }
+  }
+
+  function downloadJSON(filename, text) {
+    const blob = new Blob([text], { type: 'application/json' });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = filename;
+    document.body.appendChild(a);
+    a.click();
+    document.body.removeChild(a);
+    URL.revokeObjectURL(url);
+  }
+
+  async function onExport() {
+    const data = await exportData();
+    const text = JSON.stringify(data, null, 2);
+    setExportedText(text);
+    if (Platform.OS === 'web') {
+      const stamp = new Date().toISOString().slice(0, 10);
+      downloadJSON(`bathroomtracker-backup-${stamp}.json`, text);
+    }
+  }
+
+  async function onImport() {
+    const raw = (importText || '').trim();
+    if (!raw) {
+      Alert.alert('Пусто', 'Вставьте данные из файла экспорта.');
+      return;
+    }
+    setImporting(true);
+    try {
+      const parsed = JSON.parse(raw);
+      Alert.alert(
+        'Импортировать данные?',
+        'Записи дефекаций и приёмы пищи будут добавлены к текущим (без дублей). Профиль и настройки обновятся.',
+        [
+          { text: 'Отмена', style: 'cancel' },
+          {
+            text: 'Импортировать',
+            onPress: async () => {
+              try {
+                await importData(parsed);
+                setImportText('');
+                const s = await getSettings();
+                setSettings(s);
+                Alert.alert('Готово', 'Данные импортированы.');
+              } catch (e) {
+                Alert.alert('Ошибка', e && e.message ? e.message : 'Не удалось импортировать данные.');
+              }
+            },
+          },
+        ]
+      );
+    } catch (e) {
+      Alert.alert('Неверный JSON', 'Не удалось разобрать вставленные данные. Скопируйте файл целиком.');
+    } finally {
+      setImporting(false);
     }
   }
 
@@ -164,6 +226,47 @@ export default function SettingsScreen() {
             звонок появится в собранной версии приложения.
           </Text>
         </View>
+
+        <Card>
+          <Section title="Данные" />
+          <Text style={[styles.rowDesc, { color: palette.textSecondary, marginBottom: space.md }]}>
+            Резервная копия в формате JSON: профиль, история, приёмы пищи и настройки.
+          </Text>
+          <Button
+            title="Экспорт в JSON"
+            icon="plus"
+            variant="secondary"
+            onPress={onExport}
+            style={styles.spacer}
+          />
+          {exportedText ? (
+            <TextField
+              label="Ваши данные (скопируйте или сохраните файл)"
+              multiline
+              value={exportedText}
+              onChangeText={setExportedText}
+              inputStyle={styles.mono}
+              style={{ marginTop: space.md }}
+            />
+          ) : null}
+
+          <TextField
+            label="Импорт (вставьте JSON)"
+            multiline
+            value={importText}
+            onChangeText={setImportText}
+            placeholder='Сюда — данные из экспорта…'
+            style={{ marginTop: space.md }}
+          />
+          <Button
+            title="Импортировать"
+            icon="check"
+            variant="secondary"
+            loading={importing}
+            onPress={onImport}
+            style={styles.spacer}
+          />
+        </Card>
       </ScrollView>
     </SafeAreaView>
   );
@@ -198,4 +301,5 @@ const styles = StyleSheet.create({
   spacer: { marginTop: space.md },
   noteBox: { borderRadius: 14, padding: space.md, marginTop: space.md },
   note: { fontSize: type.caption, lineHeight: 17 },
+  mono: { fontFamily: Platform.OS === 'ios' ? 'Menlo' : 'monospace', fontSize: 12 },
 });
