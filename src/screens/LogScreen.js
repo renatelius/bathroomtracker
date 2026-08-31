@@ -1,4 +1,4 @@
-import React, { useState, useCallback } from 'react';
+import React, { useState, useCallback, useRef } from 'react';
 import {
   View,
   Text,
@@ -9,6 +9,8 @@ import {
   Image,
   TouchableOpacity,
   ScrollView,
+  Animated,
+  PanResponder,
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { searchFoods, kcalForServing } from '../services/foodApi';
@@ -34,6 +36,27 @@ export default function LogScreen() {
   const [photoCal, setPhotoCal] = useState('');
   const [photoName, setPhotoName] = useState('');
   const [estimating, setEstimating] = useState(false);
+
+  // Свайп между под-режимами «Поиск» / «Своё фото»
+  const panX = useRef(new Animated.Value(0)).current;
+  const panResponder = useRef(
+    PanResponder.create({
+      onMoveShouldSetPanResponder: (_, g) =>
+        Math.abs(g.dx) > 12 && Math.abs(g.dx) > Math.abs(g.dy) * 1.2,
+      onPanResponderMove: (_, g) => {
+        panX.setValue(g.dx);
+      },
+      onPanResponderRelease: (_, g) => {
+        if (Math.abs(g.dx) > 64) {
+          setMode((m) => (m === 'search' ? 'photo' : 'search'));
+        }
+        Animated.spring(panX, { toValue: 0, useNativeDriver: true, speed: 24, bounciness: 0 }).start();
+      },
+      onPanResponderTerminate: () => {
+        Animated.spring(panX, { toValue: 0, useNativeDriver: true }).start();
+      },
+    })
+  ).current;
 
   const onSearch = useCallback(async () => {
     if (!query.trim()) return;
@@ -166,7 +189,12 @@ export default function LogScreen() {
             <Text style={[styles.modeTabText, { color: mode === 'photo' ? palette.accent : palette.textMuted }]}>Своё фото</Text>
           </TouchableOpacity>
         </View>
+        <Text style={[styles.swipeHint, { color: palette.textMuted }]}>Свайп влево/вправо — переключение режимов</Text>
 
+        <Animated.View
+          style={[styles.modeWrap, { transform: [{ translateX: panX }] }]}
+          {...panResponder.panHandlers}
+        >
         {mode === 'search' ? (
           <>
             <View style={styles.searchRow}>
@@ -284,6 +312,7 @@ export default function LogScreen() {
             ) : null}
           </Card>
         )}
+        </Animated.View>
 
         <Button
           title="+ Дефекация сейчас"
@@ -300,7 +329,9 @@ export default function LogScreen() {
 const styles = StyleSheet.create({
   flex: { flex: 1 },
   container: { padding: space.xl, paddingTop: 16 },
-  modeRow: { flexDirection: 'row', borderRadius: 14, padding: 4, marginBottom: space.lg },
+  modeRow: { flexDirection: 'row', borderRadius: 14, padding: 4, marginBottom: space.sm },
+  modeWrap: { marginBottom: space.sm },
+  swipeHint: { fontSize: type.caption, textAlign: 'center', marginBottom: space.lg },
   modeTab: { flex: 1, flexDirection: 'row', alignItems: 'center', justifyContent: 'center', paddingVertical: 12, borderRadius: 11, minHeight: 44 },
   modeTabActive: {},
   modeTabText: { marginLeft: 6, fontSize: type.body, fontWeight: type.semibold },
