@@ -10,8 +10,14 @@ import {
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { useFocusEffect } from '@react-navigation/native';
 import { getMeals, getDefecations, removeMeal, removeDefecation } from '../store/storage';
-import { ScreenHeader, Card, Icon, FadeIn } from '../ui';
+import { ScreenHeader, Card, Icon, FadeIn, CategoryModal } from '../ui';
 import { useThemeColors, type, space } from '../theme';
+
+const CATEGORIES = [
+  { id: 'meal', label: 'Приёмы пищи', icon: 'food' },
+  { id: 'defecation', label: 'Дефекации', icon: 'check' },
+];
+const ALL = CATEGORIES.map((c) => c.id);
 
 function fmt(ms) {
   const d = new Date(ms);
@@ -24,6 +30,8 @@ export default function HistoryScreen() {
   const palette = useThemeColors();
   const [meals, setMeals] = useState([]);
   const [defecations, setDefecations] = useState([]);
+  const [filter, setFilter] = useState(ALL);
+  const [modalVisible, setModalVisible] = useState(false);
 
   const load = useCallback(async () => {
     setMeals(await getMeals());
@@ -35,11 +43,16 @@ export default function HistoryScreen() {
   const mealItems = meals.map((m) => ({ ...m, kind: 'meal' })).sort((a, b) => b.timeMs - a.timeMs);
   const defItems = defecations.map((d) => ({ ...d, kind: 'defecation' })).sort((a, b) => b.timeMs - a.timeMs);
   const combined = [...mealItems, ...defItems].sort((a, b) => b.timeMs - a.timeMs);
+  const filtered = combined.filter((item) => filter.includes(item.kind));
 
   async function onDelete(item) {
     if (item.kind === 'meal') setMeals(await removeMeal(item.id));
     else setDefecations(await removeDefecation(item.id));
   }
+
+  const headerMeta = CATEGORIES.filter((c) => filter.includes(c.id))
+    .map((c) => c.label)
+    .join(' · ');
 
   function renderItem({ item, index }) {
     const isMeal = item.kind === 'meal';
@@ -84,19 +97,52 @@ export default function HistoryScreen() {
   return (
     <SafeAreaView style={[styles.flex, { backgroundColor: palette.bg }]}>
       <View style={styles.header}>
-        <ScreenHeader title="История" subtitle="Приёмы пищи и дефекации" icon="history" />
+        <View style={styles.headerRow}>
+          <View style={{ flex: 1 }}>
+            <ScreenHeader title="История" subtitle="Приёмы пищи и дефекации" icon="history" />
+          </View>
+          <TouchableOpacity
+            style={[styles.filterBtn, { backgroundColor: palette.surface, borderColor: palette.border }]}
+            onPress={() => setModalVisible(true)}
+            activeOpacity={0.8}
+            accessibilityRole="button"
+            accessibilityLabel="Выбрать категории"
+          >
+            <Icon name="friends" size={17} color={palette.accent} />
+            <Text style={[styles.filterText, { color: palette.textPrimary }]}>Категории</Text>
+            <View style={[styles.filterBadge, { backgroundColor: palette.accent }]}>
+              <Text style={[styles.filterBadgeText, { color: palette.textOnAccent }]}>{filter.length}</Text>
+            </View>
+          </TouchableOpacity>
+        </View>
+        <Text style={[styles.meta, { color: palette.textMuted }]} numberOfLines={1}>
+          {filter.length === CATEGORIES.length ? 'Все категории' : headerMeta}
+        </Text>
       </View>
+
       <FlatList
-        data={combined}
+        data={filtered}
         keyExtractor={(item) => `${item.kind}_${item.id}`}
         renderItem={renderItem}
         ListEmptyComponent={
           <View style={styles.emptyBox}>
             <Icon name="list" size={32} color={palette.textMuted} />
-            <Text style={[styles.empty, { color: palette.textMuted }]}>Пока нет записей</Text>
+            <Text style={[styles.empty, { color: palette.textMuted }]}>
+              {combined.length ? 'В этих категориях пока нет записей' : 'Пока нет записей'}
+            </Text>
           </View>
         }
         contentContainerStyle={styles.list}
+      />
+
+      <CategoryModal
+        visible={modalVisible}
+        title="Категории"
+        categories={CATEGORIES}
+        selected={filter}
+        onChange={setFilter}
+        onClose={() => setModalVisible(false)}
+        onApply={() => setModalVisible(false)}
       />
     </SafeAreaView>
   );
@@ -105,6 +151,28 @@ export default function HistoryScreen() {
 const styles = StyleSheet.create({
   flex: { flex: 1 },
   header: { paddingHorizontal: space.xl, paddingTop: space.lg, paddingBottom: space.sm },
+  headerRow: { flexDirection: 'row', alignItems: 'center' },
+  filterBtn: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    borderRadius: 14,
+    borderWidth: 1,
+    paddingHorizontal: 12,
+    paddingVertical: 8,
+    marginTop: 2,
+  },
+  filterText: { marginLeft: 6, fontSize: type.body, fontWeight: type.semibold },
+  filterBadge: {
+    marginLeft: 8,
+    minWidth: 20,
+    height: 20,
+    borderRadius: 10,
+    paddingHorizontal: 5,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  filterBadgeText: { fontSize: 11, fontWeight: type.semibold },
+  meta: { fontSize: type.caption, marginTop: 4, marginBottom: 4 },
   list: { paddingHorizontal: space.xl, paddingBottom: 30 },
   row: {
     flexDirection: 'row',

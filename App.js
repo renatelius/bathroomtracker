@@ -74,8 +74,8 @@ function MainNavigator() {
         <Tab.Screen name="Лог" component={LogScreen} options={{ tabBarLabel: t('tabLog') }} />
         <Tab.Screen name="Календарь" component={CalendarScreen} options={{ tabBarLabel: t('tabCalendar') }} />
         <Tab.Screen name="История" component={HistoryScreen} options={{ tabBarLabel: t('tabHistory') }} />
-        <Tab.Screen name="Настройки" component={SettingsScreen} options={{ tabBarLabel: t('tabSettings') }} />
         <Tab.Screen name="Профиль" component={ProfileScreen} options={{ tabBarLabel: t('tabProfile') }} />
+        <Tab.Screen name="Настройки" component={SettingsScreen} options={{ tabBarLabel: t('tabSettings') }} />
       </Tab.Navigator>
     </NavigationContainer>
   );

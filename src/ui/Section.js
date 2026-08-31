@@ -17,10 +17,11 @@ export default function Section({ title, value, right, style }) {
 }
 
 const styles = StyleSheet.create({
-  row: { flexDirection: 'row', alignItems: 'center', marginTop: space.sm, marginBottom: space.sm },
+  row: { flexDirection: 'row', alignItems: 'center', marginTop: space.xl, marginBottom: space.md },
   title: {
     fontSize: type.section,
     fontWeight: type.semibold,
+    letterSpacing: 0.2,
   },
   value: {
     marginLeft: 'auto',

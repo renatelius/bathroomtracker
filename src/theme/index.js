@@ -67,7 +67,7 @@ export const card = {
   backgroundColor: palette.surface,
   borderRadius: radius.md,
   padding: space.lg,
-  marginBottom: space.md,
+  marginBottom: space.lg,
   ...shadow.card,
 };
 

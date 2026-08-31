@@ -126,6 +126,7 @@ export default function PredictScreen() {
         <FadeIn>
           <Card
             tone="accent"
+            style={styles.heroCard}
             accessible
             accessibilityLabel={`Следующая дефекация вероятнее всего ${main.date} примерно в ${main.time} (${shiftText}). ${sourceLabel}`}
           >
@@ -231,13 +232,13 @@ const styles = StyleSheet.create({
   windowDash: { marginHorizontal: 10, fontSize: 18 },
   confidence: { textAlign: 'center', marginTop: 12, fontWeight: type.semibold },
 
-  // factors
+  // factor rows
+  heroCard: { paddingVertical: space.xl, paddingHorizontal: space.xl, marginTop: space.sm },
   factorRow: {
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'space-between',
-    paddingVertical: 9,
-    borderBottomWidth: StyleSheet.hairlineWidth,
+    paddingVertical: 12,
   },
   factorLabel: { fontSize: type.body, flex: 1, paddingRight: 12 },
   factorPill: {

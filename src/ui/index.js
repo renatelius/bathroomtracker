@@ -7,3 +7,4 @@ export { default as TextField } from './TextField';
 export { default as Section } from './Section';
 export { default as FadeIn } from './FadeIn';
 export { default as ProgressionCard } from './ProgressionCard';
+export { default as CategoryModal } from './CategoryModal';

@@ -151,18 +151,33 @@ export default function Icon({ name, size = 22, color, strokeWidth = 'regular', 
   const sw = typeof strokeWidth === 'number' ? strokeWidth : widths[strokeWidth] || widths.regular;
   return (
     <Svg width={size} height={size} viewBox="0 0 24 24" fill="none">
-      {React.Children.toArray(children || PATHS[name]).map((el, i) =>
-        React.cloneElement(el, {
-          key: i,
-          stroke: resolvedColor,
-          strokeWidth: sw,
-          strokeLinecap: 'round',
-          strokeLinejoin: 'round',
-          fill: el.props.fill ? 'currentColor' : 'none',
-        })
-      )}
+      {React.Children.toArray(children || PATHS[name])
+        .flatMap(flattenLeaves)
+        .map((el, i) =>
+          React.cloneElement(el, {
+            key: i,
+            stroke: resolvedColor,
+            strokeWidth: sw,
+            strokeLinecap: 'round',
+            strokeLinejoin: 'round',
+            fill: el.props.fill ? 'currentColor' : 'none',
+          })
+        )}
     </Svg>
   );
+}
+
+/** Разворачивает Fragment-обёртки, возвращая только листовые SVG-примитивы. */
+function flattenLeaves(el) {
+  const type = el && el.type;
+  const kids = el && el.props ? el.props.children : null;
+  if (type === React.Fragment) {
+    return React.Children.toArray(kids || []).flatMap(flattenLeaves);
+  }
+  if (kids && Array.isArray(kids)) {
+    return React.Children.toArray(kids).flatMap(flattenLeaves);
+  }
+  return [el];
 }
 
 export const iconNames = Object.keys(PATHS);

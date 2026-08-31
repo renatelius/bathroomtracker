@@ -1,5 +1,5 @@
 import React, { useState, useCallback } from 'react';
-import { ScrollView, Text, Switch, StyleSheet, Alert, Platform } from 'react-native';
+import { View, ScrollView, Text, Switch, StyleSheet, Alert, Platform } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { useFocusEffect } from '@react-navigation/native';
 import { getSettings, saveSettings, getProfile, getDefecations, getMeals, exportData, importData } from '../store/storage';
