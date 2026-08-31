@@ -1,6 +1,17 @@
-import React from 'react';
-import { TouchableOpacity, Text, StyleSheet } from 'react-native';
+import React, { useRef } from 'react';
+import { Animated, Text, TouchableOpacity, StyleSheet } from 'react-native';
 import { useThemeColors, radius, type, space } from '../theme';
+
+function usePressScale() {
+  const scale = useRef(new Animated.Value(1)).current;
+  const onPressIn = () => {
+    Animated.spring(scale, { toValue: 0.95, useNativeDriver: true, speed: 40, bounciness: 0 }).start();
+  };
+  const onPressOut = () => {
+    Animated.spring(scale, { toValue: 1, useNativeDriver: true, speed: 30, bounciness: 0 }).start();
+  };
+  return { scale, onPressIn, onPressOut };
+}
 
 /**
  * Выбираемая чип-кнопка (для выбора минут, диеты и т.п.).
@@ -8,31 +19,35 @@ import { useThemeColors, radius, type, space } from '../theme';
  */
 export default function Chip({ label, active = false, tone = 'accent', onPress, style }) {
   const palette = useThemeColors();
+  const { scale, onPressIn, onPressOut } = usePressScale();
   const activeBg =
     tone === 'danger' ? palette.danger : tone === 'warning' ? palette.warning : palette.accent;
   return (
-    <TouchableOpacity
-      style={[
-        styles.chip,
-        active ? { backgroundColor: activeBg } : { backgroundColor: palette.surfaceAlt },
-        style,
-      ]}
-      activeOpacity={0.8}
-      onPress={onPress}
-      accessibilityRole="radio"
-      accessibilityState={{ selected: active }}
-      accessibilityLabel={active ? `${label}, выбрано` : label}
-    >
-      <Text
+    <Animated.View style={[{ transform: [{ scale }] }, style]}>
+      <TouchableOpacity
         style={[
-          styles.text,
-          active ? { color: palette.textOnAccent } : { color: palette.textPrimary },
-          active && styles.activeWeight,
+          styles.chip,
+          active ? { backgroundColor: activeBg } : { backgroundColor: palette.surfaceAlt },
         ]}
+        activeOpacity={0.8}
+        onPress={onPress}
+        onPressIn={onPressIn}
+        onPressOut={onPressOut}
+        accessibilityRole="radio"
+        accessibilityState={{ selected: active }}
+        accessibilityLabel={active ? `${label}, выбрано` : label}
       >
-        {label}
-      </Text>
-    </TouchableOpacity>
+        <Text
+          style={[
+            styles.text,
+            active ? { color: palette.textOnAccent } : { color: palette.textPrimary },
+            active && styles.activeWeight,
+          ]}
+        >
+          {label}
+        </Text>
+      </TouchableOpacity>
+    </Animated.View>
   );
 }
 

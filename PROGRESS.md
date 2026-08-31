@@ -85,6 +85,14 @@
 - **Баг (нашёл Kiro):** `Onboarding.js` `TouchableChip` был некликабелен — `onPress` уходил на инертный `<Card>` (обычный View). Переписан на `TouchableOpacity` + `accessibilityRole="radio"` + selected; выбранное выделено `info`-рамкой + галочкой, текст `textPrimary` (info/infoSoft 3.80 — рамка как графика 3:1 ок).
 - **Проверки:** `npm test` 12/12; Babel; `expo export web` — успешно. Kiro-ревью провёл; спорные ratios проверены точным WCAG-расчётом (PASS).
 
+## Завершено: Микроанимации (RN Animated, без новых зависимостей)
+- **`src/ui/FadeIn.js` (новый):** FadeIn — плавное появление (fade + сдвиг вверх) на монтировании через `Animated.spring` (`useNativeDriver`), `delay` для каскада, `.stop()` на анмаунте. Экспортируется через `src/ui/index.js`.
+- **`Button.js` / `Chip.js`:** press-фидбек — scale-спринг (вниз на нажатии, вверх на отпускании) через обёртку `Animated.View`; событие `onPress` на внутреннем `TouchableOpacity`, так что тап срабатывает корректно.
+- **`PredictScreen.js`:** hero-карточка прогноза обёрнута в `FadeIn`.
+- **`HistoryScreen.js`:** строки списка обёрнуты в `FadeIn` с каскадной задержкой `index*45` (cap 180 мс), `translateY: 8`.
+- Навигационные переходы табов НЕ менял (низкая ценность/риск без stack-навигатора) — анимации сделаны внутри экранов.
+- **Kiro-ревью:** правки учтены (стабильные deps эффекта, `stop()` cleanup, корректный spring, `delay` в spring = валиден в RN). Проверки: `npm test` 12/12, Babel, `expo export web` — зелёные.
+
 ## Relevant Files
 - `src/theme/index.js`, `src/theme/palettes.js` (новый), `src/theme/theme-context.js` (новый)
 - `src/ui/` — все компоненты переведены на `useThemeColors()` (Card, Button, Chip, Icon, ScreenHeader, Section, TextField)

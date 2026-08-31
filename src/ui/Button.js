@@ -1,7 +1,18 @@
-import React from 'react';
-import { View, Text, TouchableOpacity, StyleSheet, ActivityIndicator } from 'react-native';
+import React, { useRef } from 'react';
+import { Text, TouchableOpacity, Animated, StyleSheet, ActivityIndicator } from 'react-native';
 import { useThemeColors, primaryButtonText, primaryButtonDisabled, radius, type } from '../theme';
 import Icon from './Icon';
+
+function usePressScale() {
+  const scale = useRef(new Animated.Value(1)).current;
+  const onPressIn = () => {
+    Animated.spring(scale, { toValue: 0.97, useNativeDriver: true, speed: 40, bounciness: 0 }).start();
+  };
+  const onPressOut = () => {
+    Animated.spring(scale, { toValue: 1, useNativeDriver: true, speed: 30, bounciness: 0 }).start();
+  };
+  return { scale, onPressIn, onPressOut };
+}
 
 /**
  * Основная кнопка. `variant`: 'primary' | 'secondary' | 'ghost' | 'danger'.
@@ -37,13 +48,15 @@ export default function Button({
         : palette.textOnAccent;
 
   const isDisabled = disabled || loading;
+  const { scale, onPressIn, onPressOut } = usePressScale();
 
   return (
-    <View
+    <Animated.View
       style={[
         isDisabled && primaryButtonDisabled,
         styles.wrap,
         style,
+        { transform: [{ scale }] },
       ]}
     >
       <TouchableOpacity
@@ -51,6 +64,8 @@ export default function Button({
         activeOpacity={0.85}
         disabled={isDisabled}
         onPress={onPress}
+        onPressIn={onPressIn}
+        onPressOut={onPressOut}
         accessibilityRole="button"
         accessibilityState={{ disabled: isDisabled }}
         {...rest}
@@ -66,7 +81,7 @@ export default function Button({
           </>
         )}
       </TouchableOpacity>
-    </View>
+    </Animated.View>
   );
 }
 

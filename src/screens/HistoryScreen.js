@@ -10,7 +10,7 @@ import {
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { useFocusEffect } from '@react-navigation/native';
 import { getMeals, getDefecations, removeMeal, removeDefecation } from '../store/storage';
-import { ScreenHeader, Card, Icon } from '../ui';
+import { ScreenHeader, Card, Icon, FadeIn } from '../ui';
 import { useThemeColors, type, space } from '../theme';
 
 function fmt(ms) {
@@ -41,10 +41,11 @@ export default function HistoryScreen() {
     else setDefecations(await removeDefecation(item.id));
   }
 
-  function renderItem({ item }) {
+  function renderItem({ item, index }) {
     const isMeal = item.kind === 'meal';
     return (
-      <Card style={[styles.row, { borderLeftColor: isMeal ? palette.accent : palette.success }]}>
+      <FadeIn delay={Math.min(index * 45, 180)} translateY={8}>
+        <Card style={[styles.row, { borderLeftColor: isMeal ? palette.accent : palette.success }]}>
         <View style={{ flex: 1 }}>
           <Text style={[styles.time, { color: palette.textMuted }]}>{fmt(item.timeMs)}</Text>
           <View style={styles.nameRow}>
@@ -75,7 +76,8 @@ export default function HistoryScreen() {
         >
           <Icon name="close" size={18} color={palette.danger} />
         </TouchableOpacity>
-      </Card>
+        </Card>
+      </FadeIn>
     );
   }
 

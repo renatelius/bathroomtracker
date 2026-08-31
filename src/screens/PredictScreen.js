@@ -12,7 +12,7 @@ import { useFocusEffect } from '@react-navigation/native';
 import { predict } from '../model/model.mjs';
 import { getProfile, getDefecations, getMeals, getSettings } from '../store/storage';
 import { schedulePrediction, cancelPrediction, ensurePermissions } from '../services/notifications';
-import { ScreenHeader, Card, Button, Section, Icon } from '../ui';
+import { ScreenHeader, Card, Button, Section, Icon, FadeIn } from '../ui';
 import { useThemeColors, type, space } from '../theme';
 
 const DAY = 24 * 3600e3;
@@ -117,24 +117,26 @@ export default function PredictScreen() {
       >
         <ScreenHeader title="Прогноз" subtitle="Следующая дефекация" icon="forecast" />
 
-        <Card
-          tone="accent"
-          accessible
-          accessibilityLabel={`Следующая дефекация вероятнее всего ${main.date} примерно в ${main.time} (${shiftText}). ${sourceLabel}`}
-        >
-          <Text style={[styles.accentLabel, { color: palette.accentSoft }]}>
-            Следующая дефекация вероятнее всего
-          </Text>
+        <FadeIn>
+          <Card
+            tone="accent"
+            accessible
+            accessibilityLabel={`Следующая дефекация вероятнее всего ${main.date} примерно в ${main.time} (${shiftText}). ${sourceLabel}`}
+          >
+            <Text style={[styles.accentLabel, { color: palette.accentSoft }]}>
+              Следующая дефекация вероятнее всего
+            </Text>
           <Text style={[styles.accentDate, { color: palette.textOnAccent }]}>{main.date}</Text>
           <View style={styles.accentTimeRow}>
             <Text style={[styles.accentTime, { color: palette.textOnAccent }]}>~{main.time}</Text>
             <Text style={[styles.shift, { color: palette.accentSoft }]}>{shiftText}</Text>
           </View>
-          <View style={styles.sourceRow}>
-            <Icon name="forecast" size={15} color={palette.accentSoft} />
-            <Text style={[styles.source, { color: palette.accentSoft }]}>Метод: {sourceLabel}</Text>
-          </View>
-        </Card>
+            <View style={styles.sourceRow}>
+              <Icon name="forecast" size={15} color={palette.accentSoft} />
+              <Text style={[styles.source, { color: palette.accentSoft }]}>Метод: {sourceLabel}</Text>
+            </View>
+          </Card>
+        </FadeIn>
 
         <Section title="Окно достоверности" />
         <Card tone="default" style={styles.compactCard}>
