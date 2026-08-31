@@ -6,10 +6,11 @@ import {
   StyleSheet,
   KeyboardAvoidingView,
   Platform,
+  TouchableOpacity,
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { saveProfile } from '../store/storage';
-import { ScreenHeader, Chip, Button, TextField, Card, Icon } from '../ui';
+import { ScreenHeader, Chip, Button, TextField, Icon } from '../ui';
 import { useThemeColors, type, space } from '../theme';
 
 const BODY_TYPES = [
@@ -107,20 +108,26 @@ export default function Onboarding({ onDone }) {
 function TouchableChip({ active, onPress, children }) {
   const palette = useThemeColors();
   return (
-    <Card
-      tone={active ? 'info' : 'default'}
-      style={styles.chipFull}
+    <TouchableOpacity
+      onPress={onPress}
+      activeOpacity={0.8}
+      style={[
+        styles.chipFull,
+        active
+          ? { backgroundColor: palette.infoSoft, borderColor: palette.info }
+          : { backgroundColor: palette.surface, borderColor: palette.border },
+      ]}
+      accessibilityRole="radio"
+      accessibilityState={{ selected: active }}
+      accessibilityLabel={typeof children === 'string' ? children : undefined}
     >
-      <View
-        style={styles.chipFullInner}
-        accessibilityRole="button"
-      >
-        <Text style={[styles.chipFullText, active && { color: palette.accent, fontWeight: type.semibold }]}>
+      <View style={styles.chipFullInner}>
+        <Text style={[styles.chipFullText, active && { color: palette.textPrimary, fontWeight: type.semibold }]}>
           {children}
         </Text>
-        {active && <Icon name="check" size={18} color={palette.accent} />}
+        {active && <Icon name="check" size={18} color={palette.info} />}
       </View>
-    </Card>
+    </TouchableOpacity>
   );
 }
 
@@ -135,7 +142,15 @@ const styles = StyleSheet.create({
   },
   row: { flexDirection: 'row', gap: 12 },
   flexChip: { flex: 1 },
-  chipFull: { marginBottom: space.sm, paddingVertical: space.md },
+  chipFull: {
+    marginBottom: space.sm,
+    paddingVertical: space.md,
+    paddingHorizontal: 16,
+    borderRadius: 14,
+    borderWidth: 1,
+    minHeight: 48,
+    justifyContent: 'center',
+  },
   chipFullInner: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between' },
   chipFullText: { fontSize: type.body },
   button: { marginTop: space.xxl },

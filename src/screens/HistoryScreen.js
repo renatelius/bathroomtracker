@@ -66,7 +66,13 @@ export default function HistoryScreen() {
             </View>
           </View>
         </View>
-        <TouchableOpacity onPress={() => onDelete(item)} hitSlop={8}>
+        <TouchableOpacity
+          onPress={() => onDelete(item)}
+          hitSlop={14}
+          style={styles.deleteBtn}
+          accessibilityRole="button"
+          accessibilityLabel={`Удалить запись ${isMeal ? item.name : 'Дефекация'}`}
+        >
           <Icon name="close" size={18} color={palette.danger} />
         </TouchableOpacity>
       </Card>
@@ -103,6 +109,14 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     paddingVertical: space.md,
     borderLeftWidth: 4,
+  },
+  deleteBtn: {
+    width: 44,
+    height: 44,
+    marginLeft: 8,
+    alignItems: 'center',
+    justifyContent: 'center',
+    marginVertical: -space.md,
   },
   time: { fontSize: type.caption, marginBottom: 4 },
   nameRow: { flexDirection: 'row', alignItems: 'center' },

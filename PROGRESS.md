@@ -76,6 +76,15 @@
 - Примечание: `CalendarScreen.js` и `ProfileScreen.js` содержат UTF-8 BOM в начале (пресуществующее, не мешает Metro).
 - Друзья/чат — нужен бэкенд. Реальное распознавание — нужен API-ключ (сейчас mock).
 
+## Завершено: Доступность и контраст (WCAG AA)
+- **Контраст:** пересчитаны пары «текст/фон» по формуле WCAG; подняты до AA (4.5:1) в `palettes.js`:
+  - Light: `textMuted` #8A938C → #666F69, `accent` #2F7D63 → #2A735C, `forecastLow/Mid` синхронно.
+  - Dark: `textMuted` #7E8B83 → #8A978D, `forecastLow` синхронно.
+  - Все ключевые пары светлая/тёмная тема ≥4.5 (textOnAccent/accent 5.67 / 8.81; textMuted на bg 4.78; accent на accentSoft 4.61).
+- **Управление (role/state/label):** Button (button+disabled), Chip (radio+selected, label, minHeight 44), LogScreen табы/найти/еда/фото, HistoryScreen кнопка удаления (44×44), PredictScreen карточка прогноза (голосовое описание), CalendarScreen напоминание, SettingsScreen Switch (switch+label+state), ProfileScreen аватар.
+- **Баг (нашёл Kiro):** `Onboarding.js` `TouchableChip` был некликабелен — `onPress` уходил на инертный `<Card>` (обычный View). Переписан на `TouchableOpacity` + `accessibilityRole="radio"` + selected; выбранное выделено `info`-рамкой + галочкой, текст `textPrimary` (info/infoSoft 3.80 — рамка как графика 3:1 ок).
+- **Проверки:** `npm test` 12/12; Babel; `expo export web` — успешно. Kiro-ревью провёл; спорные ratios проверены точным WCAG-расчётом (PASS).
+
 ## Relevant Files
 - `src/theme/index.js`, `src/theme/palettes.js` (новый), `src/theme/theme-context.js` (новый)
 - `src/ui/` — все компоненты переведены на `useThemeColors()` (Card, Button, Chip, Icon, ScreenHeader, Section, TextField)

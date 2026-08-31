@@ -103,7 +103,8 @@ export default function SettingsScreen() {
             desc="Громкое уведомление перед прогнозом. По желанию."
             control={
               <Switch value={settings.alarmEnabled} onValueChange={onToggleAlarm} disabled={busy}
-                trackColor={{ false: palette.surfaceAlt, true: palette.accent }} thumbColor={palette.surface} />
+                trackColor={{ false: palette.surfaceAlt, true: palette.accent }} thumbColor={palette.surface}
+                accessibilityRole="switch" accessibilityLabel="Напоминание" accessibilityState={{ checked: settings.alarmEnabled }} />
             }
           />
 
@@ -131,7 +132,8 @@ export default function SettingsScreen() {
             desc="Добавлять прогноз как событие в системный календарь."
             control={
               <Switch value={settings.calendarEnabled} onValueChange={onToggleCalendar} disabled={busy}
-                trackColor={{ false: palette.surfaceAlt, true: palette.accent }} thumbColor={palette.surface} />
+                trackColor={{ false: palette.surfaceAlt, true: palette.accent }} thumbColor={palette.surface}
+                accessibilityRole="switch" accessibilityLabel="Событие в календаре" accessibilityState={{ checked: settings.calendarEnabled }} />
             }
           />
         </Card>

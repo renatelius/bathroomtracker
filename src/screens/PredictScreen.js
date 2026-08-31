@@ -117,7 +117,11 @@ export default function PredictScreen() {
       >
         <ScreenHeader title="Прогноз" subtitle="Следующая дефекация" icon="forecast" />
 
-        <Card tone="accent">
+        <Card
+          tone="accent"
+          accessible
+          accessibilityLabel={`Следующая дефекация вероятнее всего ${main.date} примерно в ${main.time} (${shiftText}). ${sourceLabel}`}
+        >
           <Text style={[styles.accentLabel, { color: palette.accentSoft }]}>
             Следующая дефекация вероятнее всего
           </Text>

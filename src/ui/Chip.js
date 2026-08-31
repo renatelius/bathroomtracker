@@ -19,6 +19,9 @@ export default function Chip({ label, active = false, tone = 'accent', onPress, 
       ]}
       activeOpacity={0.8}
       onPress={onPress}
+      accessibilityRole="radio"
+      accessibilityState={{ selected: active }}
+      accessibilityLabel={active ? `${label}, выбрано` : label}
     >
       <Text
         style={[
@@ -36,12 +39,13 @@ export default function Chip({ label, active = false, tone = 'accent', onPress, 
 const styles = StyleSheet.create({
   chip: {
     paddingHorizontal: 16,
-    paddingVertical: 9,
+    paddingVertical: 13,
     borderRadius: radius.pill,
     marginRight: 8,
     marginBottom: 8,
     alignItems: 'center',
     justifyContent: 'center',
+    minHeight: 44,
   },
   text: { fontSize: type.body, fontWeight: type.medium },
   activeWeight: { fontWeight: type.semibold },

@@ -51,6 +51,8 @@ export default function Button({
         activeOpacity={0.85}
         disabled={isDisabled}
         onPress={onPress}
+        accessibilityRole="button"
+        accessibilityState={{ disabled: isDisabled }}
         {...rest}
       >
         {loading ? (

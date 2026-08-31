@@ -10,10 +10,10 @@ export const paletteLight = {
 
   textPrimary: '#1E2420',
   textSecondary: '#5B655E',
-  textMuted: '#8A938C',
+  textMuted: '#666F69',
   textOnAccent: '#FFFFFF',
 
-  accent: '#2F7D63',
+  accent: '#2A735C',
   accentSoft: '#DDEBE4',
   info: '#2F6FED',
   infoSoft: '#E3EBFB',
@@ -27,8 +27,8 @@ export const paletteLight = {
   border: '#E3E8E2',
   divider: '#EDF1EC',
 
-  forecastLow: '#8A938C',
-  forecastMid: '#2F7D63',
+  forecastLow: '#666F69',
+  forecastMid: '#2A735C',
   forecastHigh: '#B7C0BA',
 
   shadow: '#1E2420',
@@ -42,7 +42,7 @@ export const paletteDark = {
 
   textPrimary: '#EDF3EF',
   textSecondary: '#B8C4BC',
-  textMuted: '#7E8B83',
+  textMuted: '#8A978D',
   textOnAccent: '#0E1512',
 
   accent: '#58C6A0',
@@ -59,7 +59,7 @@ export const paletteDark = {
   border: '#2E3A34',
   divider: '#262F2B',
 
-  forecastLow: '#7E8B83',
+  forecastLow: '#8A978D',
   forecastMid: '#58C6A0',
   forecastHigh: '#3C4A43',
 

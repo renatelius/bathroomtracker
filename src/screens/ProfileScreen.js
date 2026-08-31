@@ -98,7 +98,7 @@ export default function ProfileScreen() {
         <ScreenHeader title={t('profile')} subtitle="Ваш профиль и настройки" icon="profile" />
 
         <Card>
-          <TouchableOpacity style={styles.avatarRow} onPress={chooseAvatar} activeOpacity={0.8}>
+          <TouchableOpacity style={styles.avatarRow} onPress={chooseAvatar} activeOpacity={0.8} accessibilityRole="button" accessibilityLabel="Изменить фото профиля">
             {avatar ? (
               <Image source={{ uri: avatar }} style={styles.avatarImg} />
             ) : (

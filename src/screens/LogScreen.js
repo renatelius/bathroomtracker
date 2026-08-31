@@ -148,6 +148,9 @@ export default function LogScreen() {
           <TouchableOpacity
             style={[styles.modeTab, mode === 'search' && [styles.modeTabActive, { backgroundColor: palette.surface }]]}
             onPress={() => setMode('search')}
+            accessibilityRole="radio"
+            accessibilityState={{ selected: mode === 'search' }}
+            accessibilityLabel="Режим поиска"
           >
             <Icon name="list" size={16} color={mode === 'search' ? palette.accent : palette.textMuted} />
             <Text style={[styles.modeTabText, { color: mode === 'search' ? palette.accent : palette.textMuted }]}>Поиск</Text>
@@ -155,6 +158,9 @@ export default function LogScreen() {
           <TouchableOpacity
             style={[styles.modeTab, mode === 'photo' && [styles.modeTabActive, { backgroundColor: palette.surface }]]}
             onPress={() => setMode('photo')}
+            accessibilityRole="radio"
+            accessibilityState={{ selected: mode === 'photo' }}
+            accessibilityLabel="Режим своего фото"
           >
             <Icon name="photo" size={16} color={mode === 'photo' ? palette.accent : palette.textMuted} />
             <Text style={[styles.modeTabText, { color: mode === 'photo' ? palette.accent : palette.textMuted }]}>Своё фото</Text>
@@ -174,7 +180,7 @@ export default function LogScreen() {
                   inputStyle={[styles.searchInput, { backgroundColor: palette.surface }]}
                 />
               </View>
-              <TouchableOpacity style={[styles.searchBtn, { backgroundColor: palette.accent }]} onPress={onSearch}>
+              <TouchableOpacity style={[styles.searchBtn, { backgroundColor: palette.accent }]} onPress={onSearch} accessibilityRole="button" accessibilityLabel="Найти блюдо">
                 {searching ? <ActivityIndicator color="#fff" /> : <Text style={styles.searchBtnText}>Найти</Text>}
               </TouchableOpacity>
             </View>
@@ -190,6 +196,9 @@ export default function LogScreen() {
                     activeOpacity={0.8}
                     style={[styles.food, { backgroundColor: palette.surface, borderColor: palette.border }, active && { borderColor: palette.accent, backgroundColor: palette.accentSoft }]}
                     onPress={() => setSelected(item)}
+                    accessibilityRole="radio"
+                    accessibilityState={{ selected: active }}
+                    accessibilityLabel={`${item.name}${item.kcal100g != null ? `, ${Math.round(item.kcal100g)} килокалорий на 100 грамм` : ''}`}
                   >
                     {item.imageUrl ? (
                       <Image source={{ uri: item.imageUrl }} style={[styles.foodThumb, { backgroundColor: palette.surfaceAlt }]} />
@@ -232,7 +241,7 @@ export default function LogScreen() {
           </>
         ) : (
           <Card>
-            <TouchableOpacity style={[styles.photoDrop, { backgroundColor: palette.surfaceAlt, borderColor: palette.border }]} onPress={onPickPhoto}>
+            <TouchableOpacity style={[styles.photoDrop, { backgroundColor: palette.surfaceAlt, borderColor: palette.border }]} onPress={onPickPhoto} accessibilityRole="button" accessibilityLabel="Выбрать фото приёма пищи">
               {photoUri ? (
                 <Image source={{ uri: photoUri }} style={styles.photoPreview} />
               ) : (
@@ -292,7 +301,7 @@ const styles = StyleSheet.create({
   flex: { flex: 1 },
   container: { padding: space.xl, paddingTop: 16 },
   modeRow: { flexDirection: 'row', borderRadius: 14, padding: 4, marginBottom: space.lg },
-  modeTab: { flex: 1, flexDirection: 'row', alignItems: 'center', justifyContent: 'center', paddingVertical: 9, borderRadius: 11 },
+  modeTab: { flex: 1, flexDirection: 'row', alignItems: 'center', justifyContent: 'center', paddingVertical: 12, borderRadius: 11, minHeight: 44 },
   modeTabActive: {},
   modeTabText: { marginLeft: 6, fontSize: type.body, fontWeight: type.semibold },
 

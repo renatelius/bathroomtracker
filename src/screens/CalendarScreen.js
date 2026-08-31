@@ -218,6 +218,9 @@ export default function CalendarScreen() {
               style={[styles.alarmBtn, { backgroundColor: palette.accent }, busy && { opacity: 0.6 }]}
               onPress={onSetAlarm}
               disabled={busy}
+              accessibilityRole="button"
+              accessibilityLabel="Поставить напоминание о прогнозе"
+              accessibilityState={{ disabled: busy }}
             >
               <Text style={[styles.alarmBtnText, { color: palette.textOnAccent }]}>🔔 Поставить напоминание</Text>
             </TouchableOpacity>
