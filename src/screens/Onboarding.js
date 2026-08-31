@@ -19,23 +19,36 @@ const BODY_TYPES = [
   { key: 'hypersthenic', label: 'Гиперстеник (плотный)' },
 ];
 
+const STEPS = [
+  { title: 'Добро пожаловать', subtitle: 'Расскажите о себе: эти данные нужны для точного прогноза и никуда не отправляются.', icon: 'profile' },
+  { title: 'Рост и вес', subtitle: 'Антропометрия помогает точнее оценивать интервалы и регулярность.', icon: 'list' },
+  { title: 'Тип телосложения', subtitle: 'Влияет на интерпретацию норм — ничего не отправляется.', icon: 'profile' },
+  { title: 'Готово', subtitle: 'Проверьте данные — их всегда можно изменить позже в профиле.', icon: 'check' },
+];
+
 export default function Onboarding({ onDone }) {
   const palette = useThemeColors();
+  const [step, setStep] = useState(0);
   const [sex, setSex] = useState(null);
   const [heightCm, setHeightCm] = useState('');
   const [weightKg, setWeightKg] = useState('');
   const [birthYear, setBirthYear] = useState('');
   const [bodyType, setBodyType] = useState(null);
 
-  const ready =
-    sex &&
-    parseFloat(heightCm) > 0 &&
-    parseFloat(weightKg) > 0 &&
-    birthYear.trim() &&
-    bodyType;
+  const stepValid =
+    step === 0
+      ? Boolean(sex)
+      : step === 1
+        ? parseFloat(heightCm) > 0 && parseFloat(weightKg) > 0 && birthYear.trim() !== ''
+        : step === 2
+          ? Boolean(bodyType)
+          : true;
+
+  function goTo(next) {
+    setStep(Math.max(0, Math.min(STEPS.length - 1, next)));
+  }
 
   async function handleSave() {
-    if (!ready) return;
     const profile = {
       sex,
       heightCm: parseFloat(heightCm),
@@ -47,61 +60,129 @@ export default function Onboarding({ onDone }) {
     onDone(profile);
   }
 
+  const current = STEPS[step];
+
   return (
     <SafeAreaView style={[styles.flex, { backgroundColor: palette.bg }]}>
       <KeyboardAvoidingView
         style={styles.flex}
         behavior={Platform.OS === 'ios' ? 'padding' : undefined}
       >
-        <ScrollView contentContainerStyle={styles.container}>
-          <ScreenHeader
-            title="Добро пожаловать"
-            subtitle="Эти данные нужны для точного прогноза. Никуда не отправляются."
-            icon="profile"
-          />
-
-          <Text style={[styles.stepLabel, { color: palette.textSecondary }]}>Пол</Text>
-          <View style={styles.row}>
-            <Chip label="Мужской" active={sex === 'male'} onPress={() => setSex('male')} style={styles.flexChip} />
-            <Chip label="Женский" active={sex === 'female'} onPress={() => setSex('female')} style={styles.flexChip} />
-          </View>
-
-          <TextField
-            label="Рост, см"
-            keyboardType="numeric"
-            value={heightCm}
-            onChangeText={setHeightCm}
-            placeholder="Например 175"
-          />
-          <TextField
-            label="Вес, кг"
-            keyboardType="numeric"
-            value={weightKg}
-            onChangeText={setWeightKg}
-            placeholder="Например 70"
-          />
-          <TextField
-            label="Год рождения"
-            keyboardType="numeric"
-            value={birthYear}
-            onChangeText={setBirthYear}
-            placeholder="Например 1990"
-          />
-
-          <Text style={[styles.stepLabel, { color: palette.textSecondary }]}>Тип телосложения</Text>
-          {BODY_TYPES.map((b) => (
-            <TouchableChip key={b.key} active={bodyType === b.key} onPress={() => setBodyType(b.key)}>
-              {b.label}
-            </TouchableChip>
+        {/* Прогресс-бар по шагам */}
+        <View style={styles.progressWrap}>
+          {STEPS.map((_, i) => (
+            <View key={i} style={[styles.progressTrack, i <= step && { backgroundColor: palette.accent }]} />
           ))}
+        </View>
 
-          <Button title="Готово" disabled={!ready} onPress={handleSave} style={styles.button} />
-          {!ready && (
-            <Text style={[styles.hint, { color: palette.textMuted }]}>Заполните все поля, чтобы продолжить.</Text>
+        <ScrollView
+          contentContainerStyle={styles.container}
+          keyboardShouldPersistTaps="handled"
+        >
+          <ScreenHeader title={current.title} subtitle={current.subtitle} icon={current.icon} />
+
+          {step === 0 && (
+            <View>
+              <Text style={[styles.stepLabel, { color: palette.textSecondary }]}>Пол</Text>
+              <Text style={[styles.helper, { color: palette.textMuted }]}>
+                Учитывается при расчёте прогноза. Выберите один вариант.
+              </Text>
+              <View style={styles.row}>
+                <Chip label="Мужской" active={sex === 'male'} onPress={() => setSex('male')} style={styles.flexChip} />
+                <Chip label="Женский" active={sex === 'female'} onPress={() => setSex('female')} style={styles.flexChip} />
+              </View>
+            </View>
+          )}
+
+          {step === 1 && (
+            <View>
+              <TextField
+                label="Рост, см"
+                keyboardType="numeric"
+                value={heightCm}
+                onChangeText={setHeightCm}
+                placeholder="Например 175"
+              />
+              <TextField
+                label="Вес, кг"
+                keyboardType="numeric"
+                value={weightKg}
+                onChangeText={setWeightKg}
+                placeholder="Например 70"
+              />
+              <TextField
+                label="Год рождения"
+                keyboardType="numeric"
+                value={birthYear}
+                onChangeText={setBirthYear}
+                placeholder="Например 1990"
+              />
+            </View>
+          )}
+
+          {step === 2 && (
+            <View>
+              <Text style={[styles.stepLabel, { color: palette.textSecondary }]}>Тип телосложения</Text>
+              <Text style={[styles.helper, { color: palette.textMuted }]}>
+                Выберите, что вам ближе всего. Никакие данные не покидают устройство.
+              </Text>
+              {BODY_TYPES.map((b) => (
+                <TouchableChip key={b.key} active={bodyType === b.key} onPress={() => setBodyType(b.key)}>
+                  {b.label}
+                </TouchableChip>
+              ))}
+            </View>
+          )}
+
+          {step === 3 && (
+            <View style={styles.summary}>
+              <SummaryRow label="Пол" value={sex === 'male' ? 'Мужской' : 'Женский'} />
+              <SummaryRow label="Рост" value={`${heightCm} см`} />
+              <SummaryRow label="Вес" value={`${weightKg} кг`} />
+              <SummaryRow label="Год рождения" value={birthYear} />
+              <SummaryRow label="Телосложение" value={BODY_TYPES.find((b) => b.key === bodyType)?.label} />
+            </View>
+          )}
+
+          {/* Навигация по шагам */}
+          <View style={styles.nav}>
+            {step > 0 && (
+              <Button variant="secondary" title="Назад" icon="arrowLeft" onPress={() => goTo(step - 1)} style={styles.navBack} />
+            )}
+            {step < STEPS.length - 1 ? (
+              <Button
+                title="Далее"
+                icon="check"
+                disabled={!stepValid}
+                onPress={() => goTo(step + 1)}
+                style={[styles.navNext, step === 0 && styles.navNextFull]}
+              />
+            ) : (
+              <Button title="Завершить" icon="check" onPress={handleSave} style={styles.navNext} />
+            )}
+          </View>
+          {step < STEPS.length - 1 && !stepValid && (
+            <Text style={[styles.hint, { color: palette.textMuted }]}>
+              {step === 0
+                ? 'Выберите пол, чтобы продолжить.'
+                : step === 1
+                  ? 'Заполните рост, вес и год рождения.'
+                  : 'Выберите тип телосложения.'}
+            </Text>
           )}
         </ScrollView>
       </KeyboardAvoidingView>
     </SafeAreaView>
+  );
+}
+
+function SummaryRow({ label, value }) {
+  const palette = useThemeColors();
+  return (
+    <View style={[styles.summaryRow, { borderBottomColor: palette.divider }]}>
+      <Text style={[styles.summaryLabel, { color: palette.textSecondary }]}>{label}</Text>
+      <Text style={[styles.summaryValue, { color: palette.textPrimary }]}>{value}</Text>
+    </View>
   );
 }
 
@@ -133,13 +214,27 @@ function TouchableChip({ active, onPress, children }) {
 
 const styles = StyleSheet.create({
   flex: { flex: 1 },
-  container: { padding: space.xl, paddingTop: 28 },
+  container: { padding: space.xl, paddingTop: 20 },
+  progressWrap: {
+    flexDirection: 'row',
+    gap: 8,
+    paddingHorizontal: space.xl,
+    paddingTop: space.md,
+    paddingBottom: 4,
+  },
+  progressTrack: {
+    flex: 1,
+    height: 4,
+    borderRadius: 2,
+    backgroundColor: 'rgba(128,128,128,0.2)',
+  },
   stepLabel: {
     fontSize: type.label,
     fontWeight: type.semibold,
-    marginTop: space.lg,
+    marginTop: space.md,
     marginBottom: space.sm,
   },
+  helper: { fontSize: type.caption, marginBottom: space.sm },
   row: { flexDirection: 'row', gap: 12 },
   flexChip: { flex: 1 },
   chipFull: {
@@ -153,6 +248,18 @@ const styles = StyleSheet.create({
   },
   chipFullInner: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between' },
   chipFullText: { fontSize: type.body },
-  button: { marginTop: space.xxl },
+  summary: { marginTop: space.sm },
+  summaryRow: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    paddingVertical: space.md,
+    borderBottomWidth: StyleSheet.hairlineWidth,
+  },
+  summaryLabel: { fontSize: type.body },
+  summaryValue: { fontSize: type.body, fontWeight: type.semibold },
+  nav: { flexDirection: 'row', gap: 12, marginTop: space.xxl },
+  navBack: { flex: 0.45 },
+  navNext: { flex: 1 },
+  navNextFull: { flex: 1 },
   hint: { textAlign: 'center', fontSize: type.caption, marginTop: space.sm },
 });
