@@ -1,14 +1,16 @@
 import React, { useEffect, useState, useCallback } from 'react';
-import { NavigationContainer } from '@react-navigation/native';
+import { NavigationContainer, createNavigationContainerRef } from '@react-navigation/native';
 import { createBottomTabNavigator } from '@react-navigation/bottom-tabs';
 import { SafeAreaProvider } from 'react-native-safe-area-context';
-import { ActivityIndicator, View } from 'react-native';
+import { ActivityIndicator, View, Platform } from 'react-native';
 import { StatusBar } from 'expo-status-bar';
 
 import { getProfile } from './src/store/storage';
 import I18nProvider, { useI18n } from './src/i18n';
 import { Icon } from './src/ui';
 import { useThemeColors, ThemeProvider } from './src/theme';
+import { setGoToLogHandler } from './src/services/nav';
+import { onNotificationTap } from './src/services/notifications';
 import Onboarding from './src/screens/Onboarding';
 import LogScreen from './src/screens/LogScreen';
 import PredictScreen from './src/screens/PredictScreen';
@@ -18,6 +20,7 @@ import SettingsScreen from './src/screens/SettingsScreen';
 import ProfileScreen from './src/screens/ProfileScreen';
 
 const Tab = createBottomTabNavigator();
+const navigationRef = createNavigationContainerRef();
 
 function TabBarIcon({ name, color, size }) {
   return <Icon name={name} size={size || 22} color={color} strokeWidth="regular" />;
@@ -26,8 +29,28 @@ function TabBarIcon({ name, color, size }) {
 function MainNavigator() {
   const { t } = useI18n();
   const palette = useThemeColors();
+
+  useEffect(() => {
+    // Переход на «Лог» по нажатию на напоминание (native).
+    setGoToLogHandler(() => {
+      if (navigationRef.isReady()) {
+        navigationRef.navigate('Лог');
+      }
+    });
+  }, []);
+
+  useEffect(() => {
+    let sub;
+    if (Platform.OS !== 'web') {
+      // Поддержка нажатия по локальному уведомлению.
+      const unsubscribe = onNotificationTap();
+      return () => unsubscribe && unsubscribe();
+    }
+    return undefined;
+  }, []);
+
   return (
-    <NavigationContainer>
+    <NavigationContainer ref={navigationRef}>
       <StatusBar style="auto" />
       <Tab.Navigator
         screenOptions={({ route }) => ({

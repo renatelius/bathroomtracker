@@ -21,13 +21,18 @@ export async function applyReminder({ prediction, settings }) {
 
   // Будильник (уведомление со звуком) — если включён
   if (settings.alarmEnabled) {
+    // Сначала гасим прежний будильник, чтобы при каждом применении не
+    // копились дубликаты запланированных уведомлений.
+    await cancelAlarm();
     const when = new Date(prediction.predictedAtMs);
-    result.alarmId = await schedulePrediction({
+    const res = await schedulePrediction({
       predictedAtMs: prediction.predictedAtMs,
       leadMinutes: settings.alarmLeadMinutes || 0,
       title: 'Прогноз дефекации',
       body: `По расчётам — примерно ${when.toLocaleTimeString('ru-RU', { hour: '2-digit', minute: '2-digit' })}.`,
     });
+    result.alarmId = res.id || null;
+    result.alarmReason = res.reason || 'ok';
   }
 
   // Событие в системном календаре — если включено

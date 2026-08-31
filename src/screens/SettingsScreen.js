@@ -44,8 +44,14 @@ export default function SettingsScreen() {
       if (value) {
         const s = await persist({ alarmEnabled: true });
         const prediction = await applyToPrediction();
-        await applyReminder({ prediction, settings: s });
-        Alert.alert('Включено', `Напоминание за ${s.alarmLeadMinutes === 0 ? 'точно к' : s.alarmLeadMinutes} мин. до прогноза.`);
+        const res = await applyReminder({ prediction, settings: s });
+        if (res.alarmReason === 'too_soon') {
+          Alert.alert('Слишком скоро', 'Следующий прогноз меньше чем за выбранное время — напоминание не поставлено.');
+        } else if (res.alarmReason === 'no_permission') {
+          Alert.alert('Нет разрешения', 'Разрешите уведомления в настройках системы, чтобы включить напоминание.');
+        } else {
+          Alert.alert('Включено', `Напоминание за ${s.alarmLeadMinutes === 0 ? 'точно к' : s.alarmLeadMinutes} мин. до прогноза.`);
+        }
       } else {
         await persist({ alarmEnabled: false });
         await cancelAlarm();
@@ -210,8 +216,14 @@ export default function SettingsScreen() {
               const s = await getSettings();
               const prediction = await applyToPrediction();
               if (s.alarmEnabled || s.calendarEnabled) {
-                await applyReminder({ prediction, settings: s });
-                Alert.alert('Применено', 'Напоминание и/или событие календаря обновлены под текущий прогноз.');
+                const res = await applyReminder({ prediction, settings: s });
+                if (s.alarmEnabled && res.alarmReason === 'too_soon') {
+                  Alert.alert('Слишком скоро', 'Следующий прогноз меньше чем за выбранное время — напоминание не поставлено.');
+                } else if (s.alarmEnabled && res.alarmReason === 'no_permission') {
+                  Alert.alert('Нет разрешения', 'Разрешите уведомления в настройках системы.');
+                } else {
+                  Alert.alert('Применено', 'Напоминание и/или событие календаря обновлены под текущий прогноз.');
+                }
               } else {
                 Alert.alert('Ничего не включено', 'Включите напоминание или календарь выше.');
               }
