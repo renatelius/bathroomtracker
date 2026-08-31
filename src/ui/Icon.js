@@ -135,6 +135,13 @@ const PATHS = {
       <Path d="M13 3L5 13.5h6L11 21l8-10.5h-6z" />
     </>
   ),
+  // Пламя (серия/страйк)
+  flame: (
+    <>
+      <Path d="M12 22c3.4-1.1 5.5-3.7 5.5-7C17.5 10 13.9 8.4 12 4.5 10.1 8.4 6.5 10 6.5 15c0 3.3 2.1 5.9 5.5 7z" />
+      <Path d="M12 16.5c1.3-.5 2.2-1.7 2.2-3.1 0-1.9-1.5-3-2.2-4.6" />
+    </>
+  ),
 };
 
 export default function Icon({ name, size = 22, color, strokeWidth = 'regular', children }) {

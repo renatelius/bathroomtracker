@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useCallback } from 'react';
+import React, { useState, useCallback, useMemo } from 'react';
 import {
   View,
   Text,
@@ -10,9 +10,10 @@ import {
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { useFocusEffect } from '@react-navigation/native';
 import { predict } from '../model/model.mjs';
+import { computeStats, computeMilestones } from '../model/progression.mjs';
 import { getProfile, getDefecations, getMeals, getSettings } from '../store/storage';
 import { schedulePrediction, cancelPrediction, ensurePermissions } from '../services/notifications';
-import { ScreenHeader, Card, Button, Section, Icon, FadeIn } from '../ui';
+import { ScreenHeader, Card, Button, Section, Icon, FadeIn, ProgressionCard } from '../ui';
 import { useThemeColors, type, space } from '../theme';
 
 const DAY = 24 * 3600e3;
@@ -31,6 +32,10 @@ export default function PredictScreen() {
   const [busy, setBusy] = useState(false);
   const [locale, setLocale] = useState('ru-RU');
   const [lead, setLead] = useState(15);
+  const [defecations, setDefecations] = useState([]);
+
+  const progStats = useMemo(() => computeStats(defecations), [defecations]);
+  const milestones = useMemo(() => computeMilestones(defecations), [defecations]);
 
   const load = useCallback(async () => {
     const profile = await getProfile();
@@ -39,6 +44,7 @@ export default function PredictScreen() {
     const settings = await getSettings();
     const p = predict({ defecations, meals, profile, nowMs: Date.now() });
     setPrediction(p);
+    setDefecations(defecations);
     setLead(settings.alarmLeadMinutes);
   }, []);
 
@@ -138,6 +144,16 @@ export default function PredictScreen() {
           </Card>
         </FadeIn>
 
+        <Section
+          title="Ваш прогресс"
+          right={
+            <Text style={{ fontSize: 12, color: palette.textMuted }}>
+              серия {progStats.currentStreak} дн. · рекорд {progStats.bestStreak}
+            </Text>
+          }
+        />
+        <ProgressionCard stats={progStats} milestones={milestones} style={styles.progressCard} />
+
         <Section title="Окно достоверности" />
         <Card tone="default" style={styles.compactCard}>
           <View style={styles.windowRow}>
@@ -208,6 +224,7 @@ const styles = StyleSheet.create({
 
   // window card
   compactCard: { paddingTop: 14, paddingBottom: 14 },
+  progressCard: { marginBottom: space.sm },
   windowRow: { flexDirection: 'row', alignItems: 'center' },
   windowCap: { fontSize: 13 },
   windowTime: { fontSize: 19, fontWeight: type.semibold, marginTop: 2 },

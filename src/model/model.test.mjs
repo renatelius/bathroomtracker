@@ -7,6 +7,13 @@ import {
   rhythmFactor,
   baseFactor,
 } from './model.mjs';
+import {
+  computeStreak,
+  bestStreak,
+  computeStats,
+  computeMilestones,
+  COUNT_MILESTONES,
+} from './progression.mjs';
 
 const H = 3600e3;
 const now = new Date('2026-01-01T12:00:00').getTime();
@@ -97,3 +104,76 @@ test('predict: пустая история -> дефолт + физиологи�
   assert.equal(res.source, 'default');
   assert.ok(res.predictedAtMs > now);
 });
+
+// ---------------- Прогрессия ----------------
+
+// Локальный полдень в заданный день месяца (jan 2026), чтобы даты были стабильны в любом TZ.
+function day(dayNum) {
+  return new Date(2026, 0, dayNum, 12).getTime();
+}
+
+test('progression: серия как последовательные дни', () => {
+  // today = 10 янв; записи 8,9,10 янв (все три подряд вплоть до сегодня).
+  const streak = computeStreak(
+    [{ timeMs: day(8) }, { timeMs: day(9) }, { timeMs: day(10) }],
+    { nowMs: day(10) }
+  );
+  assert.equal(streak, 3);
+});
+
+test('progression: серия жива, если вчера записанo, а сегодня ещё нет', () => {
+  const streak = computeStreak(
+    [{ timeMs: day(9) }, { timeMs: day(8) }],
+    { nowMs: day(10) } // 10 сегодня, записей только 8,9
+  );
+  assert.equal(streak, 2);
+});
+
+test('progression: серия сломана при пропуске больше 1 дня', () => {
+  const streak = computeStreak([{ timeMs: day(6) }], { nowMs: day(9) });
+  assert.equal(streak, 0);
+});
+
+test('progression: пустая история -> серия 0 и нет достижений', () => {
+  assert.equal(computeStreak([], { nowMs: day(10) }), 0);
+  const m = computeMilestones([], { nowMs: day(10) });
+  assert.ok(m.every((x) => x.done === false));
+});
+
+test('progression: bestStreak находит самый длинный отрезок', () => {
+  // записи: 1,2,3 (3 дня), затем пропуск, затем 7,8 (2 дня)
+  const df = [
+    { timeMs: day(1) },
+    { timeMs: day(2) },
+    { timeMs: day(3) },
+    { timeMs: day(7) },
+    { timeMs: day(8) },
+  ];
+  assert.equal(bestStreak(df), 3);
+});
+
+test('progression: статистика считает консистентность и интервалы', () => {
+  const df = [
+    { timeMs: day(1) },
+    { timeMs: day(2) },
+    { timeMs: day(3) },
+  ];
+  const s = computeStats(df, { nowMs: day(3) });
+  assert.equal(s.totalCount, 3);
+  assert.equal(s.activeDays, 3);
+  assert.equal(s.consistencyPct, 100);
+  assert.ok(s.avgIntervalH > 0);
+});
+
+test('progression: достижения по количеству записей открываются по порогам', () => {
+  const m = computeMilestones(
+    Array.from({ length: 10 }, (_, i) => ({ timeMs: day(1 + i) })),
+    { nowMs: day(12) }
+  );
+  const byId = Object.fromEntries(m.map((x) => [x.id, x.done]));
+  assert.equal(byId.first, true);
+  assert.equal(byId.ten, true);
+  assert.equal(byId.twentyfive, false);
+  assert.equal(COUNT_MILESTONES.length, 5);
+});
+
