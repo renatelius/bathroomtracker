@@ -1,4 +1,4 @@
-﻿import React, { useState, useCallback } from 'react';
+import React, { useState, useCallback } from 'react';
 import {
   View,
   Text,
@@ -18,16 +18,16 @@ import { useThemeColors, type, space } from '../theme';
 import { ScreenHeader, Card, Button, Icon } from '../ui';
 LocaleConfig.locales['ru'] = {
   monthNames: [
-    'РЇРЅРІР°СЂСЊ', 'Р¤РµРІСЂР°Р»СЊ', 'РњР°СЂС‚', 'РђРїСЂРµР»СЊ', 'РњР°Р№', 'РСЋРЅСЊ',
-    'РСЋР»СЊ', 'РђРІРіСѓСЃС‚', 'РЎРµРЅС‚СЏР±СЂСЊ', 'РћРєС‚СЏР±СЂСЊ', 'РќРѕСЏР±СЂСЊ', 'Р”РµРєР°Р±СЂСЊ',
+    'Январь', 'Февраль', 'Март', 'Апрель', 'Май', 'Июнь',
+    'Июль', 'Август', 'Сентябрь', 'Октябрь', 'Ноябрь', 'Декабрь',
   ],
   monthNamesShort: [
-    'РЇРЅРІ', 'Р¤РµРІ', 'РњР°СЂ', 'РђРїСЂ', 'РњР°Р№', 'РСЋРЅ',
-    'РСЋР»', 'РђРІРі', 'РЎРµРЅ', 'РћРєС‚', 'РќРѕСЏ', 'Р”РµРє',
+    'Янв', 'Фев', 'Мар', 'Апр', 'Май', 'Июн',
+    'Июл', 'Авг', 'Сен', 'Окт', 'Ноя', 'Дек',
   ],
-  dayNames: ['Р’РѕСЃРєСЂРµСЃРµРЅСЊРµ', 'РџРѕРЅРµРґРµР»СЊРЅРёРє', 'Р’С‚РѕСЂРЅРёРє', 'РЎСЂРµРґР°', 'Р§РµС‚РІРµСЂРі', 'РџСЏС‚РЅРёС†Р°', 'РЎСѓР±Р±РѕС‚Р°'],
-  dayNamesShort: ['Р’СЃ', 'РџРЅ', 'Р’С‚', 'РЎСЂ', 'Р§С‚', 'РџС‚', 'РЎР±'],
-  today: 'РЎРµРіРѕРґРЅСЏ',
+  dayNames: ['Воскресенье', 'Понедельник', 'Вторник', 'Среда', 'Четверг', 'Пятница', 'Суббота'],
+  dayNamesShort: ['Вс', 'Пн', 'Вт', 'Ср', 'Чт', 'Пт', 'Сб'],
+  today: 'Сегодня',
 };
 LocaleConfig.defaultLocale = 'ru';
 
@@ -60,14 +60,14 @@ export default function CalendarScreen() {
 
     const marks = {};
 
-    // Р”РЅРё СЃ РґРµС„РµРєР°С†РёСЏРјРё вЂ” СЃРёРЅСЏСЏ С‚РѕС‡РєР°
+    // Дни с дефекациями — синяя точка
     defecations.forEach((d) => {
       const k = dayKey(d.timeMs);
       marks[k] = marks[k] || {};
       marks[k].dots = marks[k].dots || [];
       marks[k].dots.push({ key: 'def', color: '#27ae60' });
     });
-    // Р”РЅРё СЃ РµРґРѕР№ вЂ” РѕСЂР°РЅР¶РµРІР°СЏ С‚РѕС‡РєР°
+    // Дни с едой — оранжевая точка
     meals.forEach((m) => {
       const k = dayKey(m.timeMs);
       marks[k] = marks[k] || {};
@@ -75,7 +75,7 @@ export default function CalendarScreen() {
       marks[k].dots.push({ key: 'meal', color: '#f39c12' });
     });
 
-    // РћРєРЅРѕ РґРѕСЃС‚РѕРІРµСЂРЅРѕСЃС‚Рё low..high вЂ” РјСЏРіРєР°СЏ РїРѕРґСЃРІРµС‚РєР° РґРёР°РїР°Р·РѕРЅР° (РєСЂРѕРјРµ РїСЂРѕРіРЅРѕР·Р°)
+    // Окно достоверности low..high — мягкая подсветка диапазона (кроме прогноза)
     const today = todayStr();
     const lowKey = dayKey(p.lowMs);
     const highKey = dayKey(p.highMs);
@@ -94,7 +94,7 @@ export default function CalendarScreen() {
       cursor.setDate(cursor.getDate() + 1);
     }
 
-    // Р”РµРЅСЊ РїСЂРѕРіРЅРѕР·Р° вЂ” Р°РєС†РµРЅС‚РЅС‹Р№
+    // День прогноза — акцентный
     const pKey = dayKey(p.predictedAtMs);
     marks[pKey] = marks[pKey] || {};
     marks[pKey].customStyles = {
@@ -106,7 +106,7 @@ export default function CalendarScreen() {
     };
     marks[pKey].selected = true;
 
-    // РЎРµРіРѕРґРЅСЏ вЂ” СЂР°РјРєР°
+    // Сегодня — рамка
     marks[today] = marks[today] || {};
     marks[today].customStyles = marks[today].customStyles || {};
     marks[today].customStyles.container = {
@@ -128,14 +128,14 @@ export default function CalendarScreen() {
     setBusy(true);
     try {
       if (!prediction) {
-        Alert.alert('РќРµС‚ РїСЂРѕРіРЅРѕР·Р°', 'РЎРЅР°С‡Р°Р»Р° СЃРѕР±РµСЂРёС‚Рµ С‡СѓС‚СЊ Р±РѕР»СЊС€Рµ Р·Р°РїРёСЃРµР№.');
+        Alert.alert('Нет прогноза', 'Сначала соберите чуть больше записей.');
         return;
       }
       const { granted } = await ensurePermissions();
       if (!granted) {
         Alert.alert(
-          'РќРµС‚ РґРѕСЃС‚СѓРїР° Рє СѓРІРµРґРѕРјР»РµРЅРёСЏРј',
-          'Р Р°Р·СЂРµС€РёС‚Рµ СѓРІРµРґРѕРјР»РµРЅРёСЏ РІ РЅР°СЃС‚СЂРѕР№РєР°С…, С‡С‚РѕР±С‹ Р±СѓРґРёР»СЊРЅРёРє СЂР°Р±РѕС‚Р°Р».'
+          'Нет доступа к уведомлениям',
+          'Разрешите уведомления в настройках, чтобы будильник работал.'
         );
         return;
       }
@@ -145,12 +145,12 @@ export default function CalendarScreen() {
       await schedulePrediction({
         predictedAtMs: prediction.predictedAtMs,
         leadMinutes: settings.alarmLeadMinutes,
-        title: 'РџСЂРѕРіРЅРѕР· РґРµС„РµРєР°С†РёРё',
-        body: `РџРѕ СЂР°СЃС‡С‘С‚Р°Рј вЂ” РїСЂРёРјРµСЂРЅРѕ ${when.toLocaleTimeString('ru-RU', { hour: '2-digit', minute: '2-digit' })}.`,
+        title: 'Прогноз дефекации',
+        body: `По расчётам — примерно ${when.toLocaleTimeString('ru-RU', { hour: '2-digit', minute: '2-digit' })}.`,
       });
-      Alert.alert('Р“РѕС‚РѕРІРѕ', `РќР°РїРѕРјРёРЅР°РЅРёРµ СѓСЃС‚Р°РЅРѕРІР»РµРЅРѕ РЅР° ${when.toLocaleDateString('ru-RU')} ~${when.toLocaleTimeString('ru-RU', { hour: '2-digit', minute: '2-digit' })}.`);
+      Alert.alert('Готово', `Напоминание установлено на ${when.toLocaleDateString('ru-RU')} ~${when.toLocaleTimeString('ru-RU', { hour: '2-digit', minute: '2-digit' })}.`);
     } catch (e) {
-      Alert.alert('РћС€РёР±РєР°', e.message || 'РќРµ СѓРґР°Р»РѕСЃСЊ СѓСЃС‚Р°РЅРѕРІРёС‚СЊ РЅР°РїРѕРјРёРЅР°РЅРёРµ');
+      Alert.alert('Ошибка', e.message || 'Не удалось установить напоминание');
     } finally {
       setBusy(false);
     }
@@ -164,7 +164,7 @@ export default function CalendarScreen() {
     <SafeAreaView style={[styles.flex, { backgroundColor: palette.bg }]}>
       <ScrollView>
         <View style={styles.header}>
-          <ScreenHeader title="РљР°Р»РµРЅРґР°СЂСЊ" subtitle="РџСЂРѕРіРЅРѕР· Рё Р·Р°РїРёСЃРё" icon="calendar" />
+          <ScreenHeader title="Календарь" subtitle="Прогноз и записи" icon="calendar" />
         </View>
 
         <Calendar

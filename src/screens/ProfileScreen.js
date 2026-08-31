@@ -1,4 +1,4 @@
-﻿import React, { useState, useCallback } from 'react';
+import React, { useState, useCallback } from 'react';
 import {
   View,
   Text,
@@ -18,11 +18,11 @@ import { useThemeColors, type, space } from '../theme';
 import { LANGS } from '../i18n/locales';
 
 const BODY_LABELS = {
-  asthenic: 'РђСЃС‚РµРЅРёРє',
-  normostenic: 'РќРѕСЂРјРѕСЃС‚РµРЅРёРє',
-  hypersthenic: 'Р“РёРїРµСЂСЃС‚РµРЅРёРє',
+  asthenic: 'Астеник',
+  normostenic: 'Нормостеник',
+  hypersthenic: 'Гиперстеник',
 };
-const SEX_LABELS = { male: 'РњСѓР¶СЃРєРѕР№', female: 'Р–РµРЅСЃРєРёР№' };
+const SEX_LABELS = { male: 'Мужской', female: 'Женский' };
 
 export default function ProfileScreen() {
   const palette = useThemeColors();
@@ -55,17 +55,17 @@ export default function ProfileScreen() {
 
   async function resetData() {
     Alert.alert(
-      'РЎР±СЂРѕСЃРёС‚СЊ РІСЃРµ РґР°РЅРЅС‹Рµ?',
-      'РџСЂРѕС„РёР»СЊ, РёСЃС‚РѕСЂРёСЏ Рё РЅР°СЃС‚СЂРѕР№РєРё Р±СѓРґСѓС‚ СѓРґР°Р»РµРЅС‹. Р­С‚Рѕ РґРµР№СЃС‚РІРёРµ РЅРµР»СЊР·СЏ РѕС‚РјРµРЅРёС‚СЊ.',
+      'Сбросить все данные?',
+      'Профиль, история и настройки будут удалены. Это действие нельзя отменить.',
       [
-        { text: 'РћС‚РјРµРЅР°', style: 'cancel' },
+        { text: 'Отмена', style: 'cancel' },
         {
-          text: 'РЎР±СЂРѕСЃРёС‚СЊ',
+          text: 'Сбросить',
           style: 'destructive',
           onPress: async () => {
             await clearAll();
             await saveLang(lang);
-            Alert.alert('Р“РѕС‚РѕРІРѕ', 'Р”Р°РЅРЅС‹Рµ СЃР±СЂРѕС€РµРЅС‹. РџРµСЂРµР·Р°РїСѓСЃС‚РёС‚Рµ РїСЂРёР»РѕР¶РµРЅРёРµ.');
+            Alert.alert('Готово', 'Данные сброшены. Перезапустите приложение.');
           },
         },
       ]
@@ -82,14 +82,14 @@ export default function ProfileScreen() {
 
   const initials = profile.name
     ? profile.name.trim().split(/\s+/).slice(0, 2).map((w) => w[0]).join('').toUpperCase()
-    : 'вЂ”';
+    : '—';
 
   const rows = [
-    { icon: 'profile', title: 'РџРѕР»', value: SEX_LABELS[profile.sex] || profile.sex },
-    { icon: 'energy', title: 'Р РѕСЃС‚', value: `${profile.heightCm} СЃРј` },
-    { icon: 'energy', title: 'Р’РµСЃ', value: `${profile.weightKg} РєРі` },
-    { icon: 'forecast', title: 'Р“РѕРґ СЂРѕР¶РґРµРЅРёСЏ', value: String(profile.birthYear || '') },
-    { icon: 'settings', title: 'РўРµР»РѕСЃР»РѕР¶РµРЅРёРµ', value: BODY_LABELS[profile.bodyType] || profile.bodyType },
+    { icon: 'profile', title: 'Пол', value: SEX_LABELS[profile.sex] || profile.sex },
+    { icon: 'energy', title: 'Рост', value: `${profile.heightCm} см` },
+    { icon: 'energy', title: 'Вес', value: `${profile.weightKg} кг` },
+    { icon: 'forecast', title: 'Год рождения', value: String(profile.birthYear || '') },
+    { icon: 'settings', title: 'Телосложение', value: BODY_LABELS[profile.bodyType] || profile.bodyType },
   ];
 
   return (
@@ -137,7 +137,7 @@ export default function ProfileScreen() {
           </View>
         </Card>
 
-        <Button title="РЎР±СЂРѕСЃРёС‚СЊ РґР°РЅРЅС‹Рµ" icon="close" variant="danger" onPress={resetData} style={styles.spacer} />
+        <Button title="Сбросить данные" icon="close" variant="danger" onPress={resetData} style={styles.spacer} />
       </ScrollView>
     </SafeAreaView>
   );
