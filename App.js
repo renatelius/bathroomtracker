@@ -1,6 +1,7 @@
 import React, { useEffect, useState, useCallback } from 'react';
 import { NavigationContainer } from '@react-navigation/native';
 import { createBottomTabNavigator } from '@react-navigation/bottom-tabs';
+import { SafeAreaProvider } from 'react-native-safe-area-context';
 import { ActivityIndicator, View } from 'react-native';
 import { StatusBar } from 'expo-status-bar';
 
@@ -60,6 +61,7 @@ function MainNavigator() {
 function Root() {
   const [loading, setLoading] = useState(true);
   const [profile, setProfile] = useState(null);
+  const palette = useThemeColors();
 
   useEffect(() => {
     getProfile().then((p) => {
@@ -96,8 +98,10 @@ function Root() {
 
 export default function App() {
   return (
-    <ThemeProvider>
-      <Root />
-    </ThemeProvider>
+    <SafeAreaProvider>
+      <ThemeProvider>
+        <Root />
+      </ThemeProvider>
+    </SafeAreaProvider>
   );
 }
