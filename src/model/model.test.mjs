@@ -105,6 +105,91 @@ test('predict: пустая история -> дефолт + физиологи�
   assert.ok(res.predictedAtMs > now);
 });
 
+// ---------------- Модель: краевые случаи ----------------
+
+test('foodFactor: приёмы вне 48ч-окна игнорируются', () => {
+  const profile = { sex: 'male', weightKg: 80 };
+  const res = foodFactor([{ timeMs: now - 50 * H, kcal: 50000 }], profile, now);
+  assert.equal(res, 1);
+});
+
+test('foodFactor: коэффициент ограничен снизу (0.6)', () => {
+  const profile = { sex: 'male', weightKg: 80 };
+  const res = foodFactor([{ timeMs: now - 2 * H, kcal: 99999 }], profile, now);
+  assert.equal(res, 0.6);
+});
+
+test('foodFactor: один плотный приём в хвосте даёт фактор около 1 (юнит-санити)', () => {
+  const profile = { sex: 'male', weightKg: 80 };
+  const res = foodFactor([{ timeMs: now - 1 * H, kcal: 400 }], profile, now);
+  assert.ok(res >= 0.9 && res <= 1.1, `res=${res}`);
+});
+
+test('rhythmFactor: недостаточно данных -> нейтрально (1)', () => {
+  assert.equal(rhythmFactor([8, 9], 8), 1);
+  assert.equal(rhythmFactor([], 8), 1);
+  assert.equal(rhythmFactor(null, 8), 1);
+});
+
+test('rhythmFactor: учитывает циклическую разницу часов (0 и 23 рядом)', () => {
+  assert.equal(rhythmFactor([0, 0, 0], 23), 0.92);
+  assert.equal(rhythmFactor([23, 23, 23], 0), 0.92);
+});
+
+test('bodyFactor: пустой профиль нейтрален (1)', () => {
+  assert.equal(bodyFactor({}, now), 1);
+});
+
+test('bodyFactor: возраст старше 50 замедляет транзит', () => {
+  const base = bodyFactor({ heightCm: 180, weightKg: 80 }, now);
+  const older = bodyFactor({ heightCm: 180, weightKg: 80, birthYear: 1970 }, now);
+  assert.ok(older > base, `older=${older}, base=${base}`);
+});
+
+test('bodyFactor: граница ИМТ 18.5 (худой) < 30 (полный)', () => {
+  const low = bodyFactor({ heightCm: 180, weightKg: 59.5 }, now); // ИМТ ~18.4
+  const high = bodyFactor({ heightCm: 170, weightKg: 86.7 }, now); // ИМТ ~30
+  assert.ok(low < high, `low=${low}, high=${high}`);
+});
+
+test('predict: дубликаты/нулевые интервалы не дают NaN', () => {
+  const res = predict({
+    defecations: [
+      { timeMs: now - 10 * H },
+      { timeMs: now - 10 * H },
+      { timeMs: now - 2 * H },
+    ],
+    meals: [],
+    profile: {},
+    nowMs: now,
+  });
+  assert.ok(Number.isFinite(res.intervalH), 'intervalH is finite');
+  assert.ok(res.predictedAtMs > now);
+  assert.ok(res.lowMs <= res.highMs);
+});
+
+test('predict: высокий пищевой стимул не уводит интервал ниже MIN', () => {
+  const res = predict({
+    defecations: [],
+    meals: [{ timeMs: now, kcal: 99999 }],
+    profile: { sex: 'female', heightCm: 165, weightKg: 50 },
+    nowMs: now,
+  });
+  assert.ok(res.intervalH >= 12, `intervalH=${res.intervalH}`);
+  assert.equal(res.factors.food, 0.6);
+});
+
+test('predict: окно low..high симметрично по confidenceH', () => {
+  const res = predict({
+    defecations: [],
+    meals: [],
+    profile: { sex: 'male', heightCm: 180, weightKg: 80 },
+    nowMs: now,
+  });
+  const halfWindowH = (res.highMs - res.lowMs) / H / 2;
+  assert.equal(Math.round(halfWindowH * 100) / 100, res.confidenceH);
+});
+
 // ---------------- Прогрессия ----------------
 
 // Локальный полдень в заданный день месяца (jan 2026), чтобы даты были стабильны в любом TZ.
@@ -175,5 +260,83 @@ test('progression: достижения по количеству записей
   assert.equal(byId.ten, true);
   assert.equal(byId.twentyfive, false);
   assert.equal(COUNT_MILESTONES.length, 5);
+});
+
+// ---------------- Прогрессия: краевые случаи ----------------
+
+test('progression: серия учитывает сегодня, если запись есть сегодня и вчера', () => {
+  const streak = computeStreak(
+    [{ timeMs: day(9) }, { timeMs: day(10) }],
+    { nowMs: day(10) }
+  );
+  assert.equal(streak, 2);
+});
+
+test('progression: серия считает только подряд идущие дни от последней записи', () => {
+  // записи 8 и 10 (сегодня), но 9 пусто -> серия 1 (только сегодня)
+  const streak = computeStreak(
+    [{ timeMs: day(8) }, { timeMs: day(10) }],
+    { nowMs: day(10) }
+  );
+  assert.equal(streak, 1);
+});
+
+test('progression: несколько записей в один день считаются как один день серии', () => {
+  const streak = computeStreak(
+    [{ timeMs: day(9) }, { timeMs: day(9) }, { timeMs: day(10) }, { timeMs: day(10) }],
+    { nowMs: day(10) }
+  );
+  assert.equal(streak, 2);
+});
+
+test('progression: серия сломана, если последняя запись позавчера', () => {
+  // сегодня 10, последняя запись 8 (позавчера) -> серия 0
+  const streak = computeStreak([{ timeMs: day(8) }], { nowMs: day(10) });
+  assert.equal(streak, 0);
+});
+
+test('progression: computeStats с пустой историей -> нули, hasHistory=false', () => {
+  const s = computeStats([], { nowMs: day(10) });
+  assert.equal(s.totalCount, 0);
+  assert.equal(s.activeDays, 0);
+  assert.equal(s.consistencyPct, 0);
+  assert.equal(s.avgIntervalH, 0);
+  assert.equal(s.intervalStdH, 0);
+  assert.equal(s.hasHistory, false);
+});
+
+test('progression: computeStats с одной записью -> без интервалов', () => {
+  const s = computeStats([{ timeMs: day(5) }], { nowMs: day(5) });
+  assert.equal(s.totalCount, 1);
+  assert.equal(s.activeDays, 1);
+  assert.equal(s.avgIntervalH, 0);
+  assert.equal(s.intervalStdH, 0);
+  assert.equal(s.hasHistory, true);
+});
+
+test('progression: достижение «Стабильный ритм» — только при дисперсии <= 12ч', () => {
+  // Небольшой джиттер вокруг 24ч -> std ~1.2 (в пределах нормы) -> достижение открыто.
+  const offsets = [0, 40, -30, 60, -20, 50, -40, 30]; // минуты
+  const stable = Array.from({ length: 8 }, (_, i) => ({
+    timeMs: day(1 + i) + offsets[i] * 60e3,
+  }));
+  const regular = computeMilestones(stable, { nowMs: day(12) }).find(
+    (m) => m.id === 'regularity'
+  );
+  assert.equal(regular.done, true);
+
+  // Большой разброс интервалов -> не стабильный ритм
+  const erratic = computeMilestones(
+    [{ timeMs: day(1) }, { timeMs: day(2) }, { timeMs: day(9) }, { timeMs: day(15) }],
+    { nowMs: day(16) }
+  );
+  const erraticRegular = erratic.find((m) => m.id === 'regularity');
+  assert.equal(erraticRegular.done, false);
+});
+
+test('progression: одна запись не даёт «Стабильный ритм»', () => {
+  const m = computeMilestones([{ timeMs: day(5) }], { nowMs: day(5) });
+  const regular = m.find((x) => x.id === 'regularity');
+  assert.equal(regular.done, false);
 });
 
