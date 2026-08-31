@@ -4,40 +4,11 @@
  * Единые токены для типа, спейсинга, радиусов, теней и семантики.
  */
 
-// Основная палитра (спокойные природные тона: беж/бирюза/песочный)
-export const palette = {
-  // фон и поверхности
-  bg: '#F4F6F3',            // тёплый светло-серо-зелёный фон
-  surface: '#FFFFFF',       // карточки
-  surfaceAlt: '#EDF1EC',    // вторичные поверхности / чипы неактивные
+import { paletteLight, paletteDark } from './palettes';
+export { paletteLight, paletteDark, ThemeProvider, useThemeColors } from './theme-context';
 
-  // текст
-  textPrimary: '#1E2420',   // почти чёрный, тёплый
-  textSecondary: '#5B655E', // приглушённый
-  textMuted: '#8A938C',     // подписи
-  textOnAccent: '#FFFFFF',
-
-  // акцент и семантика
-  accent: '#2F7D63',        // успокаивающий бирюзово-зелёный (прогноз/основное действие)
-  accentSoft: '#DDEBE4',
-  info: '#2F6FED',          // информация
-  infoSoft: '#E3EBFB',
-  success: '#4C9A68',
-  warning: '#D98324',
-  danger: '#C2483B',
-  successSoft: '#E5F2E9',
-  warningSoft: '#FBF0E1',
-  dangerSoft: '#F9E7E5',
-
-  // границы
-  border: '#E3E8E2',
-  divider: '#EDF1EC',
-
-  // прогноз (деликатная семантика окна достоверности)
-  forecastLow: '#8A938C',
-  forecastMid: '#2F7D63',
-  forecastHigh: '#B7C0BA',
-};
+// Основная палитра (по умолчанию — светлая; обратима хуком useThemeColors)
+export const palette = paletteLight;
 
 // Типографика: единый размерный ряд (масштаб удобен для чтения с руки)
 export const type = {

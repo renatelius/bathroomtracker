@@ -5,7 +5,7 @@
  */
 import React from 'react';
 import Svg, { Path, Circle, Line, Rect } from 'react-native-svg';
-import { palette } from '../theme';
+import { useThemeColors } from '../theme';
 
 // Табличные пути (в координатах 24x24)
 const PATHS = {
@@ -137,15 +137,17 @@ const PATHS = {
   ),
 };
 
-export default function Icon({ name, size = 22, color = palette.textPrimary, strokeWidth = 'regular', children }) {
+export default function Icon({ name, size = 22, color, strokeWidth = 'regular', children }) {
+  const palette = useThemeColors();
   const widths = { thin: 1.5, regular: 1.8, bold: 2.2 };
+  const resolvedColor = color || palette.textPrimary;
   const sw = typeof strokeWidth === 'number' ? strokeWidth : widths[strokeWidth] || widths.regular;
   return (
     <Svg width={size} height={size} viewBox="0 0 24 24" fill="none">
       {React.Children.toArray(children || PATHS[name]).map((el, i) =>
         React.cloneElement(el, {
           key: i,
-          stroke: color,
+          stroke: resolvedColor,
           strokeWidth: sw,
           strokeLinecap: 'round',
           strokeLinejoin: 'round',

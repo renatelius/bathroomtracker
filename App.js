@@ -7,7 +7,7 @@ import { StatusBar } from 'expo-status-bar';
 import { getProfile } from './src/store/storage';
 import I18nProvider, { useI18n } from './src/i18n';
 import { Icon } from './src/ui';
-import { palette } from './src/theme';
+import { useThemeColors, ThemeProvider } from './src/theme';
 import Onboarding from './src/screens/Onboarding';
 import LogScreen from './src/screens/LogScreen';
 import PredictScreen from './src/screens/PredictScreen';
@@ -24,6 +24,7 @@ function TabBarIcon({ name, color, size }) {
 
 function MainNavigator() {
   const { t } = useI18n();
+  const palette = useThemeColors();
   return (
     <NavigationContainer>
       <StatusBar style="auto" />
@@ -94,5 +95,9 @@ function Root() {
 }
 
 export default function App() {
-  return <Root />;
+  return (
+    <ThemeProvider>
+      <Root />
+    </ThemeProvider>
+  );
 }

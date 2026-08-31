@@ -13,7 +13,7 @@ import { predict } from '../model/model.mjs';
 import { getProfile, getDefecations, getMeals, getSettings } from '../store/storage';
 import { schedulePrediction, cancelPrediction, ensurePermissions } from '../services/notifications';
 import { ScreenHeader, Card, Button, Section, Icon } from '../ui';
-import { palette, type, space } from '../theme';
+import { useThemeColors, type, space } from '../theme';
 
 const DAY = 24 * 3600e3;
 
@@ -25,6 +25,7 @@ function fmtTime(ms, locale) {
 }
 
 export default function PredictScreen() {
+  const palette = useThemeColors();
   const [prediction, setPrediction] = useState(null);
   const [refreshing, setRefreshing] = useState(false);
   const [busy, setBusy] = useState(false);
@@ -85,8 +86,8 @@ export default function PredictScreen() {
 
   if (!prediction) {
     return (
-      <SafeAreaView style={styles.flex}>
-        <Text style={styles.loading}>Загрузка…</Text>
+      <SafeAreaView style={[styles.flex, { backgroundColor: palette.bg }]}>
+        <Text style={[styles.loading, { color: palette.textMuted }]}>Загрузка…</Text>
       </SafeAreaView>
     );
   }
@@ -109,7 +110,7 @@ export default function PredictScreen() {
       : `через ~${(inHours / 24).toFixed(1)} дня`;
 
   return (
-    <SafeAreaView style={styles.flex}>
+    <SafeAreaView style={[styles.flex, { backgroundColor: palette.bg }]}>
       <ScrollView
         refreshControl={<RefreshControl refreshing={refreshing} onRefresh={onRefresh} />}
         contentContainerStyle={styles.container}
@@ -120,9 +121,9 @@ export default function PredictScreen() {
           <Text style={[styles.accentLabel, { color: palette.accentSoft }]}>
             Следующая дефекация вероятнее всего
           </Text>
-          <Text style={styles.accentDate}>{main.date}</Text>
+          <Text style={[styles.accentDate, { color: palette.textOnAccent }]}>{main.date}</Text>
           <View style={styles.accentTimeRow}>
-            <Text style={styles.accentTime}>~{main.time}</Text>
+            <Text style={[styles.accentTime, { color: palette.textOnAccent }]}>~{main.time}</Text>
             <Text style={[styles.shift, { color: palette.accentSoft }]}>{shiftText}</Text>
           </View>
           <View style={styles.sourceRow}>
@@ -135,16 +136,16 @@ export default function PredictScreen() {
         <Card tone="default" style={styles.compactCard}>
           <View style={styles.windowRow}>
             <View style={{ flex: 1 }}>
-              <Text style={styles.windowCap}>{low.date}</Text>
+              <Text style={[styles.windowCap, { color: palette.textSecondary }]}>{low.date}</Text>
               <Text style={[styles.windowTime, { color: palette.forecastLow }]}>~{low.time}</Text>
             </View>
-            <Text style={styles.windowDash}>—</Text>
+            <Text style={[styles.windowDash, { color: palette.textMuted }]}>—</Text>
             <View style={{ flex: 1, alignItems: 'flex-end' }}>
-              <Text style={styles.windowCap}>{high.date}</Text>
+              <Text style={[styles.windowCap, { color: palette.textSecondary }]}>{high.date}</Text>
               <Text style={[styles.windowTime, { color: palette.forecastMid }]}>~{high.time}</Text>
             </View>
           </View>
-          <Text style={styles.confidence}>± ~{prediction.confidenceH} ч</Text>
+          <Text style={[styles.confidence, { color: palette.accent }]}>± ~{prediction.confidenceH} ч</Text>
         </Card>
 
         <Section title="Что на это влияет" />
@@ -155,10 +156,10 @@ export default function PredictScreen() {
             { key: 'food', label: 'Еда (последние 48 ч)', value: prediction.factors.food, unit: '×' },
             { key: 'rhythm', label: 'Суточный ритм', value: prediction.factors.rhythm, unit: '×' },
           ].map((f) => (
-            <View key={f.key} style={styles.factorRow}>
-              <Text style={styles.factorLabel}>{f.label}</Text>
-              <View style={styles.factorPill}>
-                <Text style={styles.factorValue}>
+            <View key={f.key} style={[styles.factorRow, { borderBottomColor: palette.divider }]}>
+              <Text style={[styles.factorLabel, { color: palette.textPrimary }]}>{f.label}</Text>
+              <View style={[styles.factorPill, { backgroundColor: palette.accentSoft }]}>
+                <Text style={[styles.factorValue, { color: palette.accent }]}>
                   {f.value}{f.unit}
                 </Text>
               </View>
@@ -173,7 +174,7 @@ export default function PredictScreen() {
           onPress={onSetAlarm}
           style={styles.spacer}
         />
-        <Text style={styles.hint}>
+        <Text style={[styles.hint, { color: palette.textMuted }]}>
           Напоминание: указано в настройках. Время звонка — перед прогнозом.
         </Text>
       </ScrollView>
@@ -182,20 +183,19 @@ export default function PredictScreen() {
 }
 
 const styles = StyleSheet.create({
-  flex: { flex: 1, backgroundColor: palette.bg },
+  flex: { flex: 1 },
   container: { padding: space.xl, paddingTop: 16 },
-  loading: { textAlign: 'center', marginTop: 60, color: palette.textMuted },
+  loading: { textAlign: 'center', marginTop: 60 },
 
   // accent card
   accentLabel: { fontSize: type.label, fontWeight: type.medium, marginBottom: 8 },
   accentDate: {
     fontSize: 21,
     fontWeight: type.heavy,
-    color: palette.textOnAccent,
     textTransform: 'capitalize',
   },
   accentTimeRow: { flexDirection: 'row', alignItems: 'center', marginTop: 6 },
-  accentTime: { fontSize: 32, fontWeight: type.heavy, color: palette.textOnAccent },
+  accentTime: { fontSize: 32, fontWeight: type.heavy },
   shift: { fontSize: type.body, fontWeight: type.semibold, marginLeft: 12 },
   sourceRow: { flexDirection: 'row', alignItems: 'center', marginTop: 14 },
   source: { fontSize: 12, marginLeft: 6 },
@@ -203,10 +203,10 @@ const styles = StyleSheet.create({
   // window card
   compactCard: { paddingTop: 14, paddingBottom: 14 },
   windowRow: { flexDirection: 'row', alignItems: 'center' },
-  windowCap: { fontSize: 13, color: palette.textSecondary },
+  windowCap: { fontSize: 13 },
   windowTime: { fontSize: 19, fontWeight: type.semibold, marginTop: 2 },
-  windowDash: { marginHorizontal: 10, color: palette.textMuted, fontSize: 18 },
-  confidence: { textAlign: 'center', marginTop: 12, color: palette.accent, fontWeight: type.semibold },
+  windowDash: { marginHorizontal: 10, fontSize: 18 },
+  confidence: { textAlign: 'center', marginTop: 12, fontWeight: type.semibold },
 
   // factors
   factorRow: {
@@ -215,17 +215,15 @@ const styles = StyleSheet.create({
     justifyContent: 'space-between',
     paddingVertical: 9,
     borderBottomWidth: StyleSheet.hairlineWidth,
-    borderBottomColor: palette.divider,
   },
-  factorLabel: { fontSize: type.body, color: palette.textPrimary, flex: 1, paddingRight: 12 },
+  factorLabel: { fontSize: type.body, flex: 1, paddingRight: 12 },
   factorPill: {
-    backgroundColor: palette.accentSoft,
     borderRadius: 10,
     paddingHorizontal: 10,
     paddingVertical: 4,
   },
-  factorValue: { fontSize: 14, fontWeight: type.semibold, color: palette.accent },
+  factorValue: { fontSize: 14, fontWeight: type.semibold },
 
   spacer: { marginTop: space.md, marginBottom: space.sm },
-  hint: { fontSize: type.caption, color: palette.textMuted, textAlign: 'center', marginBottom: 20 },
+  hint: { fontSize: type.caption, textAlign: 'center', marginBottom: 20 },
 });

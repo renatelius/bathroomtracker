@@ -1,6 +1,6 @@
 import React from 'react';
 import { View, Text, TouchableOpacity, StyleSheet, ActivityIndicator } from 'react-native';
-import { palette, primaryButtonText, primaryButtonDisabled, radius, type } from '../theme';
+import { useThemeColors, primaryButtonText, primaryButtonDisabled, radius, type } from '../theme';
 import Icon from './Icon';
 
 /**
@@ -18,6 +18,7 @@ export default function Button({
   textStyle,
   ...rest
 }) {
+  const palette = useThemeColors();
 
   const bg =
     variant === 'secondary'
@@ -46,7 +47,7 @@ export default function Button({
       ]}
     >
       <TouchableOpacity
-        style={[styles.btn, { backgroundColor: bg }, variant !== 'ghost' && variant !== 'secondary' && styles.shadow]}
+        style={[styles.btn, { backgroundColor: bg }, variant !== 'ghost' && variant !== 'secondary' && styles.shadow, { shadowColor: palette.accent }]}
         activeOpacity={0.85}
         disabled={isDisabled}
         onPress={onPress}
@@ -78,7 +79,6 @@ const styles = StyleSheet.create({
     paddingHorizontal: 18,
   },
   shadow: {
-    shadowColor: palette.accent,
     shadowOffset: { width: 0, height: 3 },
     shadowOpacity: 0.25,
     shadowRadius: 8,

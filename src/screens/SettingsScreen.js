@@ -6,11 +6,12 @@ import { getSettings, saveSettings, getProfile, getDefecations, getMeals } from 
 import { predict } from '../model/model.mjs';
 import { applyReminder, cancelAlarm, calendarPermission } from '../services/alarmService';
 import { ScreenHeader, Card, Chip, Button, Section, Icon } from '../ui';
-import { palette, type, space } from '../theme';
+import { useThemeColors, type, space } from '../theme';
 
 const LEAD_OPTIONS = [0, 5, 10, 15, 30, 60];
 
 export default function SettingsScreen() {
+  const palette = useThemeColors();
   const [settings, setSettings] = useState(null);
   const [busy, setBusy] = useState(false);
 
@@ -84,14 +85,14 @@ export default function SettingsScreen() {
 
   if (!settings) {
     return (
-      <SafeAreaView style={styles.flex}>
-        <Text style={styles.loading}>Загрузка…</Text>
+      <SafeAreaView style={[styles.flex, { backgroundColor: palette.bg }]}>
+        <Text style={[styles.loading, { color: palette.textMuted }]}>Загрузка…</Text>
       </SafeAreaView>
     );
   }
 
   return (
-    <SafeAreaView style={styles.flex}>
+    <SafeAreaView style={[styles.flex, { backgroundColor: palette.bg }]}>
       <ScrollView contentContainerStyle={styles.container}>
         <ScreenHeader title="Настройки" subtitle="Напоминания и календарь" icon="settings" />
 
@@ -108,7 +109,7 @@ export default function SettingsScreen() {
 
           {settings.alarmEnabled && (
             <>
-              <Text style={styles.subNote}>Звонить за, минут</Text>
+              <Text style={[styles.subNote, { color: palette.textSecondary }]}>Звонить за, минут</Text>
               <View style={styles.chips}>
                 {LEAD_OPTIONS.map((m) => (
                   <Chip
@@ -155,8 +156,8 @@ export default function SettingsScreen() {
           style={styles.spacer}
         />
 
-        <View style={styles.noteBox}>
-          <Text style={styles.note}>
+        <View style={[styles.noteBox, { backgroundColor: palette.infoSoft }]}>
+          <Text style={[styles.note, { color: palette.textSecondary }]}>
             В экспресс-версии напоминание работает как громкое уведомление. Полный системный
             звонок появится в собранной версии приложения.
           </Text>
@@ -167,14 +168,15 @@ export default function SettingsScreen() {
 }
 
 function Row({ icon, title, desc, control }) {
+  const palette = useThemeColors();
   return (
     <View style={styles.row}>
       <View style={[styles.iconWrap, { backgroundColor: palette.accentSoft }]}>
         <Icon name={icon} size={20} color={palette.accent} />
       </View>
       <View style={{ flex: 1, paddingHorizontal: space.md }}>
-        <Text style={styles.rowTitle}>{title}</Text>
-        <Text style={styles.rowDesc}>{desc}</Text>
+        <Text style={[styles.rowTitle, { color: palette.textPrimary }]}>{title}</Text>
+        <Text style={[styles.rowDesc, { color: palette.textSecondary }]}>{desc}</Text>
       </View>
       {control}
     </View>
@@ -182,16 +184,16 @@ function Row({ icon, title, desc, control }) {
 }
 
 const styles = StyleSheet.create({
-  flex: { flex: 1, backgroundColor: palette.bg },
+  flex: { flex: 1 },
   container: { padding: space.xl, paddingTop: 16 },
-  loading: { textAlign: 'center', marginTop: 60, color: palette.textMuted },
+  loading: { textAlign: 'center', marginTop: 60 },
   row: { flexDirection: 'row', alignItems: 'center' },
   iconWrap: { width: 44, height: 44, borderRadius: 14, alignItems: 'center', justifyContent: 'center' },
-  rowTitle: { fontSize: 16, fontWeight: type.semibold, color: palette.textPrimary },
-  rowDesc: { fontSize: 13, color: palette.textSecondary, marginTop: 3, lineHeight: 18 },
-  subNote: { fontSize: type.label, color: palette.textSecondary, fontWeight: type.semibold, marginTop: space.lg },
+  rowTitle: { fontSize: 16, fontWeight: type.semibold },
+  rowDesc: { fontSize: 13, marginTop: 3, lineHeight: 18 },
+  subNote: { fontSize: type.label, fontWeight: type.semibold, marginTop: space.lg },
   chips: { flexDirection: 'row', flexWrap: 'wrap', marginTop: space.sm },
   spacer: { marginTop: space.md },
-  noteBox: { backgroundColor: palette.infoSoft, borderRadius: 14, padding: space.md, marginTop: space.md },
-  note: { fontSize: type.caption, color: palette.textSecondary, lineHeight: 17 },
+  noteBox: { borderRadius: 14, padding: space.md, marginTop: space.md },
+  note: { fontSize: type.caption, lineHeight: 17 },
 });

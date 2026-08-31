@@ -11,7 +11,7 @@ import { SafeAreaView } from 'react-native-safe-area-context';
 import { useFocusEffect } from '@react-navigation/native';
 import { getMeals, getDefecations, removeMeal, removeDefecation } from '../store/storage';
 import { ScreenHeader, Card, Icon } from '../ui';
-import { palette, type, space } from '../theme';
+import { useThemeColors, type, space } from '../theme';
 
 function fmt(ms) {
   const d = new Date(ms);
@@ -21,6 +21,7 @@ function fmt(ms) {
 }
 
 export default function HistoryScreen() {
+  const palette = useThemeColors();
   const [meals, setMeals] = useState([]);
   const [defecations, setDefecations] = useState([]);
 
@@ -45,7 +46,7 @@ export default function HistoryScreen() {
     return (
       <Card style={[styles.row, { borderLeftColor: isMeal ? palette.accent : palette.success }]}>
         <View style={{ flex: 1 }}>
-          <Text style={styles.time}>{fmt(item.timeMs)}</Text>
+          <Text style={[styles.time, { color: palette.textMuted }]}>{fmt(item.timeMs)}</Text>
           <View style={styles.nameRow}>
             {isMeal && item.photoUri ? (
               <Image source={{ uri: item.photoUri }} style={styles.thumb} />
@@ -53,11 +54,11 @@ export default function HistoryScreen() {
               <Image source={{ uri: item.imageUrl }} style={styles.thumb} />
             ) : null}
             <View style={{ flex: 1 }}>
-              <Text style={styles.name}>
+              <Text style={[styles.name, { color: palette.textPrimary }]}>
                 {isMeal ? item.name : 'Дефекация'}
               </Text>
               {isMeal ? (
-                <Text style={styles.sub}>
+                <Text style={[styles.sub, { color: palette.textMuted }]}>
                   {item.kcal ? `${Math.round(item.kcal)} ккал` : ''}
                   {item.grams ? ` · ${item.grams} г` : ''}
                 </Text>
@@ -73,7 +74,7 @@ export default function HistoryScreen() {
   }
 
   return (
-    <SafeAreaView style={styles.flex}>
+    <SafeAreaView style={[styles.flex, { backgroundColor: palette.bg }]}>
       <View style={styles.header}>
         <ScreenHeader title="История" subtitle="Приёмы пищи и дефекации" icon="history" />
       </View>
@@ -84,7 +85,7 @@ export default function HistoryScreen() {
         ListEmptyComponent={
           <View style={styles.emptyBox}>
             <Icon name="list" size={32} color={palette.textMuted} />
-            <Text style={styles.empty}>Пока нет записей</Text>
+            <Text style={[styles.empty, { color: palette.textMuted }]}>Пока нет записей</Text>
           </View>
         }
         contentContainerStyle={styles.list}
@@ -94,7 +95,7 @@ export default function HistoryScreen() {
 }
 
 const styles = StyleSheet.create({
-  flex: { flex: 1, backgroundColor: palette.bg },
+  flex: { flex: 1 },
   header: { paddingHorizontal: space.xl, paddingTop: space.lg, paddingBottom: space.sm },
   list: { paddingHorizontal: space.xl, paddingBottom: 30 },
   row: {
@@ -103,11 +104,11 @@ const styles = StyleSheet.create({
     paddingVertical: space.md,
     borderLeftWidth: 4,
   },
-  time: { fontSize: type.caption, color: palette.textMuted, marginBottom: 4 },
+  time: { fontSize: type.caption, marginBottom: 4 },
   nameRow: { flexDirection: 'row', alignItems: 'center' },
-  thumb: { width: 40, height: 40, borderRadius: 10, marginRight: 10, backgroundColor: palette.surfaceAlt },
-  name: { fontSize: 15, color: palette.textPrimary, flexShrink: 1 },
-  sub: { fontSize: 12, color: palette.textMuted, marginTop: 2 },
+  thumb: { width: 40, height: 40, borderRadius: 10, marginRight: 10 },
+  name: { fontSize: 15, flexShrink: 1 },
+  sub: { fontSize: 12, marginTop: 2 },
   emptyBox: { alignItems: 'center', marginTop: 60 },
-  empty: { color: palette.textMuted, fontSize: type.body, marginTop: 12 },
+  empty: { fontSize: type.body, marginTop: 12 },
 });

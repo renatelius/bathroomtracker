@@ -14,7 +14,7 @@ import * as ImagePicker from 'expo-image-picker';
 import { getProfile, saveProfile, saveLang, clearAll } from '../store/storage';
 import { useI18n } from '../i18n';
 import { ScreenHeader, Card, Button, Chip, Icon } from '../ui';
-import { palette, type, space } from '../theme';
+import { useThemeColors, type, space } from '../theme';
 import { LANGS } from '../i18n/locales';
 
 const BODY_LABELS = {
@@ -25,6 +25,7 @@ const BODY_LABELS = {
 const SEX_LABELS = { male: 'РњСѓР¶СЃРєРѕР№', female: 'Р–РµРЅСЃРєРёР№' };
 
 export default function ProfileScreen() {
+  const palette = useThemeColors();
   const { t, lang, setLang } = useI18n();
   const [profile, setProfile] = useState(null);
   const [avatar, setAvatar] = useState(null);
@@ -73,8 +74,8 @@ export default function ProfileScreen() {
 
   if (!profile) {
     return (
-      <SafeAreaView style={styles.flex}>
-        <Text style={styles.loading}>Р—Р°РіСЂСѓР·РєР°вЂ¦</Text>
+      <SafeAreaView style={[styles.flex, { backgroundColor: palette.bg }]}>
+        <Text style={[styles.loading, { color: palette.textMuted }]}>Загрузка…</Text>
       </SafeAreaView>
     );
   }
@@ -92,9 +93,9 @@ export default function ProfileScreen() {
   ];
 
   return (
-    <SafeAreaView style={styles.flex}>
+    <SafeAreaView style={[styles.flex, { backgroundColor: palette.bg }]}>
       <ScrollView contentContainerStyle={styles.container}>
-        <ScreenHeader title={t('profile')} subtitle="Р’Р°С€ РїСЂРѕС„РёР»СЊ Рё РЅР°СЃС‚СЂРѕР№РєРё" icon="profile" />
+        <ScreenHeader title={t('profile')} subtitle="Ваш профиль и настройки" icon="profile" />
 
         <Card>
           <TouchableOpacity style={styles.avatarRow} onPress={chooseAvatar} activeOpacity={0.8}>
@@ -102,28 +103,28 @@ export default function ProfileScreen() {
               <Image source={{ uri: avatar }} style={styles.avatarImg} />
             ) : (
               <View style={[styles.avatar, { backgroundColor: palette.accentSoft }]}>
-                <Text style={styles.avatarText}>{initials}</Text>
+                <Text style={[styles.avatarText, { color: palette.accent }]}>{initials}</Text>
               </View>
             )}
             <View style={{ flex: 1, marginLeft: space.md }}>
-              <Text style={styles.avatarTitle}>{profile.name || 'РџСЂРѕС„РёР»СЊ'}</Text>
-              <Text style={styles.avatarHint}>РќР°Р¶РјРёС‚Рµ, С‡С‚РѕР±С‹ РёР·РјРµРЅРёС‚СЊ С„РѕС‚Рѕ</Text>
+              <Text style={[styles.avatarTitle, { color: palette.textPrimary }]}>{profile.name || 'Профиль'}</Text>
+              <Text style={[styles.avatarHint, { color: palette.textMuted }]}>Нажмите, чтобы изменить фото</Text>
             </View>
           </TouchableOpacity>
-          <View style={styles.divider} />
+          <View style={[styles.divider, { backgroundColor: palette.divider }]} />
           {rows.map((r) => (
             <View key={r.title} style={styles.row}>
               <View style={[styles.iconWrap, { backgroundColor: palette.accentSoft }]}>
                 <Icon name={r.icon} size={18} color={palette.accent} />
               </View>
-              <Text style={styles.rowTitle}>{r.title}</Text>
-              <Text style={styles.rowValue}>{r.value}</Text>
+              <Text style={[styles.rowTitle, { color: palette.textPrimary }]}>{r.title}</Text>
+              <Text style={[styles.rowValue, { color: palette.textSecondary }]}>{r.value}</Text>
             </View>
           ))}
         </Card>
 
         <Card>
-          <Text style={styles.sectionTitle}>{t('language')}</Text>
+          <Text style={[styles.sectionTitle, { color: palette.textPrimary }]}>{t('language')}</Text>
           <View style={styles.langWrap}>
             {LANGS.map((l) => (
               <Chip
@@ -143,21 +144,21 @@ export default function ProfileScreen() {
 }
 
 const styles = StyleSheet.create({
-  flex: { flex: 1, backgroundColor: palette.bg },
+  flex: { flex: 1 },
   container: { padding: space.xl, paddingTop: 16 },
-  loading: { textAlign: 'center', marginTop: 60, color: palette.textMuted },
+  loading: { textAlign: 'center', marginTop: 60 },
   avatarRow: { flexDirection: 'row', alignItems: 'center', marginBottom: space.md },
   avatar: { width: 64, height: 64, borderRadius: 32, alignItems: 'center', justifyContent: 'center', overflow: 'hidden' },
   avatarImg: { width: 64, height: 64, borderRadius: 32, resizeMode: 'cover' },
-  avatarText: { fontSize: 22, fontWeight: type.heavy, color: palette.accent },
-  avatarTitle: { fontSize: 18, fontWeight: type.semibold, color: palette.textPrimary },
-  avatarHint: { fontSize: type.caption, color: palette.textMuted, marginTop: 4 },
+  avatarText: { fontSize: 22, fontWeight: type.heavy },
+  avatarTitle: { fontSize: 18, fontWeight: type.semibold },
+  avatarHint: { fontSize: type.caption, marginTop: 4 },
   row: { flexDirection: 'row', alignItems: 'center', paddingVertical: 12 },
   iconWrap: { width: 38, height: 38, borderRadius: 12, alignItems: 'center', justifyContent: 'center' },
-  rowTitle: { fontSize: 15, color: palette.textPrimary, flex: 1, paddingLeft: space.md },
-  rowValue: { fontSize: 15, color: palette.textSecondary, fontWeight: type.medium },
-  divider: { height: StyleSheet.hairlineWidth, backgroundColor: palette.divider },
-  sectionTitle: { fontSize: type.section, fontWeight: type.semibold, color: palette.textPrimary, marginBottom: space.md },
+  rowTitle: { fontSize: 15, flex: 1, paddingLeft: space.md },
+  rowValue: { fontSize: 15, fontWeight: type.medium },
+  divider: { height: StyleSheet.hairlineWidth },
+  sectionTitle: { fontSize: type.section, fontWeight: type.semibold, marginBottom: space.md },
   langWrap: { flexDirection: 'row', flexWrap: 'wrap' },
   spacer: { marginTop: space.md },
 });

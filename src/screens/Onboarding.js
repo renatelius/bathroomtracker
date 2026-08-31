@@ -10,7 +10,7 @@ import {
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { saveProfile } from '../store/storage';
 import { ScreenHeader, Chip, Button, TextField, Card, Icon } from '../ui';
-import { palette, type, space } from '../theme';
+import { useThemeColors, type, space } from '../theme';
 
 const BODY_TYPES = [
   { key: 'asthenic', label: 'Астеник (худощавый)' },
@@ -19,6 +19,7 @@ const BODY_TYPES = [
 ];
 
 export default function Onboarding({ onDone }) {
+  const palette = useThemeColors();
   const [sex, setSex] = useState(null);
   const [heightCm, setHeightCm] = useState('');
   const [weightKg, setWeightKg] = useState('');
@@ -46,7 +47,7 @@ export default function Onboarding({ onDone }) {
   }
 
   return (
-    <SafeAreaView style={styles.flex}>
+    <SafeAreaView style={[styles.flex, { backgroundColor: palette.bg }]}>
       <KeyboardAvoidingView
         style={styles.flex}
         behavior={Platform.OS === 'ios' ? 'padding' : undefined}
@@ -58,7 +59,7 @@ export default function Onboarding({ onDone }) {
             icon="profile"
           />
 
-          <Text style={styles.stepLabel}>Пол</Text>
+          <Text style={[styles.stepLabel, { color: palette.textSecondary }]}>Пол</Text>
           <View style={styles.row}>
             <Chip label="Мужской" active={sex === 'male'} onPress={() => setSex('male')} style={styles.flexChip} />
             <Chip label="Женский" active={sex === 'female'} onPress={() => setSex('female')} style={styles.flexChip} />
@@ -86,7 +87,7 @@ export default function Onboarding({ onDone }) {
             placeholder="Например 1990"
           />
 
-          <Text style={styles.stepLabel}>Тип телосложения</Text>
+          <Text style={[styles.stepLabel, { color: palette.textSecondary }]}>Тип телосложения</Text>
           {BODY_TYPES.map((b) => (
             <TouchableChip key={b.key} active={bodyType === b.key} onPress={() => setBodyType(b.key)}>
               {b.label}
@@ -95,7 +96,7 @@ export default function Onboarding({ onDone }) {
 
           <Button title="Готово" disabled={!ready} onPress={handleSave} style={styles.button} />
           {!ready && (
-            <Text style={styles.hint}>Заполните все поля, чтобы продолжить.</Text>
+            <Text style={[styles.hint, { color: palette.textMuted }]}>Заполните все поля, чтобы продолжить.</Text>
           )}
         </ScrollView>
       </KeyboardAvoidingView>
@@ -104,6 +105,7 @@ export default function Onboarding({ onDone }) {
 }
 
 function TouchableChip({ active, onPress, children }) {
+  const palette = useThemeColors();
   return (
     <Card
       tone={active ? 'info' : 'default'}
@@ -123,12 +125,11 @@ function TouchableChip({ active, onPress, children }) {
 }
 
 const styles = StyleSheet.create({
-  flex: { flex: 1, backgroundColor: palette.bg },
+  flex: { flex: 1 },
   container: { padding: space.xl, paddingTop: 28 },
   stepLabel: {
     fontSize: type.label,
     fontWeight: type.semibold,
-    color: palette.textSecondary,
     marginTop: space.lg,
     marginBottom: space.sm,
   },
@@ -136,7 +137,7 @@ const styles = StyleSheet.create({
   flexChip: { flex: 1 },
   chipFull: { marginBottom: space.sm, paddingVertical: space.md },
   chipFullInner: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between' },
-  chipFullText: { fontSize: type.body, color: palette.textPrimary },
+  chipFullText: { fontSize: type.body },
   button: { marginTop: space.xxl },
-  hint: { textAlign: 'center', color: palette.textMuted, fontSize: type.caption, marginTop: space.sm },
+  hint: { textAlign: 'center', fontSize: type.caption, marginTop: space.sm },
 });

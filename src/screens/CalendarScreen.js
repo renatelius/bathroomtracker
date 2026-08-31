@@ -14,9 +14,8 @@ import { predict } from '../model/model.mjs';
 import { getProfile, getDefecations, getMeals } from '../store/storage';
 import { schedulePrediction, cancelPrediction, ensurePermissions } from '../services/notifications';
 import { getSettings } from '../store/storage';
-import { palette, type, space } from '../theme';
+import { useThemeColors, type, space } from '../theme';
 import { ScreenHeader, Card, Button, Icon } from '../ui';
-
 LocaleConfig.locales['ru'] = {
   monthNames: [
     'РЇРЅРІР°СЂСЊ', 'Р¤РµРІСЂР°Р»СЊ', 'РњР°СЂС‚', 'РђРїСЂРµР»СЊ', 'РњР°Р№', 'РСЋРЅСЊ',
@@ -47,6 +46,7 @@ const dayKey = (ms) => {
 };
 
 export default function CalendarScreen() {
+  const palette = useThemeColors();
   const [marked, setMarked] = useState({});
   const [prediction, setPrediction] = useState(null);
   const [busy, setBusy] = useState(false);
@@ -116,7 +116,7 @@ export default function CalendarScreen() {
     };
 
     setMarked(marks);
-  }, []);
+  }, [palette]);
 
   useFocusEffect(
     useCallback(() => {
@@ -161,7 +161,7 @@ export default function CalendarScreen() {
     : null;
 
   return (
-    <SafeAreaView style={styles.flex}>
+    <SafeAreaView style={[styles.flex, { backgroundColor: palette.bg }]}>
       <ScrollView>
         <View style={styles.header}>
           <ScreenHeader title="РљР°Р»РµРЅРґР°СЂСЊ" subtitle="РџСЂРѕРіРЅРѕР· Рё Р·Р°РїРёСЃРё" icon="calendar" />
@@ -185,41 +185,41 @@ export default function CalendarScreen() {
         <View style={styles.legend}>
           <View style={styles.legendItem}>
             <View style={[styles.dot, { backgroundColor: '#27ae60' }]} />
-            <Text style={styles.legendText}>Р”РµС„РµРєР°С†РёСЏ</Text>
+            <Text style={[styles.legendText, { color: palette.textSecondary }]}>Дефекация</Text>
           </View>
           <View style={styles.legendItem}>
             <View style={[styles.dot, { backgroundColor: '#f39c12' }]} />
-            <Text style={styles.legendText}>РџСЂРёС‘Рј РїРёС‰Рё</Text>
+            <Text style={[styles.legendText, { color: palette.textSecondary }]}>Приём пищи</Text>
           </View>
           <View style={styles.legendItem}>
             <View style={[styles.dot, { backgroundColor: palette.accent }]} />
-            <Text style={styles.legendText}>РџСЂРѕРіРЅРѕР·</Text>
+            <Text style={[styles.legendText, { color: palette.textSecondary }]}>Прогноз</Text>
           </View>
           <View style={styles.legendItem}>
-            <View style={styles.windowSwatch} />
-            <Text style={styles.legendText}>РћРєРЅРѕ РґРѕСЃС‚РѕРІРµСЂРЅРѕСЃС‚Рё</Text>
+            <View style={[styles.windowSwatch, { backgroundColor: palette.accentSoft }]} />
+            <Text style={[styles.legendText, { color: palette.textSecondary }]}>Окно достоверности</Text>
           </View>
         </View>
 
         {prediction && (
-          <View style={styles.predictionCard}>
-            <Text style={styles.cardLabel}>РџСЂРѕРіРЅРѕР· СЃР»РµРґСѓСЋС‰РµР№ РґРµС„РµРєР°С†РёРё</Text>
-            <Text style={styles.cardDate}>
+          <View style={[styles.predictionCard, { backgroundColor: palette.surface }]}>
+            <Text style={[styles.cardLabel, { color: palette.textMuted }]}>Прогноз следующей дефекации</Text>
+            <Text style={[styles.cardDate, { color: palette.textPrimary }]}>
               {when.toLocaleDateString('ru-RU', { weekday: 'long', day: 'numeric', month: 'long' })}
             </Text>
-            <Text style={styles.cardTime}>
+            <Text style={[styles.cardTime, { color: palette.accent }]}>
               ~{when.toLocaleTimeString('ru-RU', { hour: '2-digit', minute: '2-digit' })}
             </Text>
-            <Text style={styles.cardRange}>
-              РѕРєРЅРѕ: {new Date(prediction.lowMs).toLocaleDateString('ru-RU', { day: 'numeric', month: 'short' })} вЂ”{' '}
+            <Text style={[styles.cardRange, { color: palette.textSecondary }]}>
+              окно: {new Date(prediction.lowMs).toLocaleDateString('ru-RU', { day: 'numeric', month: 'short' })} —{' '}
               {new Date(prediction.highMs).toLocaleDateString('ru-RU', { day: 'numeric', month: 'short' })}
             </Text>
             <TouchableOpacity
-              style={[styles.alarmBtn, busy && { opacity: 0.6 }]}
+              style={[styles.alarmBtn, { backgroundColor: palette.accent }, busy && { opacity: 0.6 }]}
               onPress={onSetAlarm}
               disabled={busy}
             >
-              <Text style={styles.alarmBtnText}>рџ”” РџРѕСЃС‚Р°РІРёС‚СЊ РЅР°РїРѕРјРёРЅР°РЅРёРµ</Text>
+              <Text style={[styles.alarmBtnText, { color: palette.textOnAccent }]}>🔔 Поставить напоминание</Text>
             </TouchableOpacity>
           </View>
         )}
@@ -229,9 +229,9 @@ export default function CalendarScreen() {
 }
 
 const styles = StyleSheet.create({
-  flex: { flex: 1, backgroundColor: palette.bg },
+  flex: { flex: 1 },
   header: { paddingHorizontal: 20, paddingTop: 16, paddingBottom: 8 },
-  title: { fontSize: 24, fontWeight: '700', color: palette.textPrimary },
+  title: { fontSize: 24, fontWeight: '700' },
   legend: {
     flexDirection: 'row',
     flexWrap: 'wrap',
@@ -240,25 +240,23 @@ const styles = StyleSheet.create({
   },
   legendItem: { flexDirection: 'row', alignItems: 'center', marginRight: 16, marginBottom: 8 },
   dot: { width: 10, height: 10, borderRadius: 5, marginRight: 6 },
-  windowSwatch: { width: 16, height: 10, borderRadius: 3, backgroundColor: palette.accentSoft, marginRight: 6 },
-  legendText: { fontSize: 12, color: palette.textSecondary },
+  windowSwatch: { width: 16, height: 10, borderRadius: 3, marginRight: 6 },
+  legendText: { fontSize: 12 },
   predictionCard: {
-    backgroundColor: palette.surface,
     borderRadius: 16,
     padding: 20,
     margin: 20,
     marginTop: 8,
   },
-  cardLabel: { fontSize: 13, color: palette.textMuted, marginBottom: 6 },
-  cardDate: { fontSize: 18, fontWeight: '700', color: palette.textPrimary, textTransform: 'capitalize' },
-  cardTime: { fontSize: 26, fontWeight: '800', color: palette.accent, marginTop: 2 },
-  cardRange: { fontSize: 13, color: palette.textSecondary, marginTop: 4 },
+  cardLabel: { fontSize: 13, marginBottom: 6 },
+  cardDate: { fontSize: 18, fontWeight: '700', textTransform: 'capitalize' },
+  cardTime: { fontSize: 26, fontWeight: '800', marginTop: 2 },
+  cardRange: { fontSize: 13, marginTop: 4 },
   alarmBtn: {
     marginTop: 16,
-    backgroundColor: palette.accent,
     borderRadius: 12,
     padding: 14,
     alignItems: 'center',
   },
-  alarmBtnText: { color: palette.textOnAccent, fontWeight: '600', fontSize: 15 },
+  alarmBtnText: { fontWeight: '600', fontSize: 15 },
 });

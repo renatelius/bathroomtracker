@@ -15,12 +15,13 @@ import { searchFoods, kcalForServing } from '../services/foodApi';
 import { addMeal, addDefecation } from '../store/storage';
 import { evaluateMealByPhoto } from '../services/vision';
 import { ScreenHeader, Card, Button, TextField, Icon } from '../ui';
-import { palette, type, space } from '../theme';
+import { useThemeColors, type, space } from '../theme';
 import * as ImagePicker from 'expo-image-picker';
 
 const DEFAULT_GRAMS = 200;
 
 export default function LogScreen() {
+  const palette = useThemeColors();
   const [mode, setMode] = useState('search'); // 'search' | 'photo'
   const [query, setQuery] = useState('');
   const [results, setResults] = useState([]);
@@ -138,25 +139,25 @@ export default function LogScreen() {
   }
 
   return (
-    <SafeAreaView style={styles.flex}>
+    <SafeAreaView style={[styles.flex, { backgroundColor: palette.bg }]}>
       <ScrollView contentContainerStyle={styles.container}>
         <ScreenHeader title="Что съели?" subtitle="Добавить приём пищи или дефекацию" icon="food" />
 
         {/* Переключатель режима */}
-        <View style={styles.modeRow}>
+        <View style={[styles.modeRow, { backgroundColor: palette.surfaceAlt }]}>
           <TouchableOpacity
-            style={[styles.modeTab, mode === 'search' && styles.modeTabActive]}
+            style={[styles.modeTab, mode === 'search' && [styles.modeTabActive, { backgroundColor: palette.surface }]]}
             onPress={() => setMode('search')}
           >
             <Icon name="list" size={16} color={mode === 'search' ? palette.accent : palette.textMuted} />
-            <Text style={[styles.modeTabText, mode === 'search' && { color: palette.accent }]}>Поиск</Text>
+            <Text style={[styles.modeTabText, { color: mode === 'search' ? palette.accent : palette.textMuted }]}>Поиск</Text>
           </TouchableOpacity>
           <TouchableOpacity
-            style={[styles.modeTab, mode === 'photo' && styles.modeTabActive]}
+            style={[styles.modeTab, mode === 'photo' && [styles.modeTabActive, { backgroundColor: palette.surface }]]}
             onPress={() => setMode('photo')}
           >
             <Icon name="photo" size={16} color={mode === 'photo' ? palette.accent : palette.textMuted} />
-            <Text style={[styles.modeTabText, mode === 'photo' && { color: palette.accent }]}>Своё фото</Text>
+            <Text style={[styles.modeTabText, { color: mode === 'photo' ? palette.accent : palette.textMuted }]}>Своё фото</Text>
           </TouchableOpacity>
         </View>
 
@@ -170,10 +171,10 @@ export default function LogScreen() {
                   onChangeText={setQuery}
                   onSubmitEditing={onSearch}
                   returnKeyType="search"
-                  inputStyle={styles.searchInput}
+                  inputStyle={[styles.searchInput, { backgroundColor: palette.surface }]}
                 />
               </View>
-              <TouchableOpacity style={styles.searchBtn} onPress={onSearch}>
+              <TouchableOpacity style={[styles.searchBtn, { backgroundColor: palette.accent }]} onPress={onSearch}>
                 {searching ? <ActivityIndicator color="#fff" /> : <Text style={styles.searchBtnText}>Найти</Text>}
               </TouchableOpacity>
             </View>
@@ -187,41 +188,41 @@ export default function LogScreen() {
                 return (
                   <TouchableOpacity
                     activeOpacity={0.8}
-                    style={[styles.food, active && styles.foodActive]}
+                    style={[styles.food, { backgroundColor: palette.surface, borderColor: palette.border }, active && { borderColor: palette.accent, backgroundColor: palette.accentSoft }]}
                     onPress={() => setSelected(item)}
                   >
                     {item.imageUrl ? (
-                      <Image source={{ uri: item.imageUrl }} style={styles.foodThumb} />
+                      <Image source={{ uri: item.imageUrl }} style={[styles.foodThumb, { backgroundColor: palette.surfaceAlt }]} />
                     ) : (
-                      <View style={[styles.foodThumb, styles.foodThumbEmpty]}>
+                      <View style={[styles.foodThumb, styles.foodThumbEmpty, { backgroundColor: palette.surfaceAlt }]}>
                         <Icon name="food" size={18} color={palette.textMuted} />
                       </View>
                     )}
                     <View style={{ flex: 1, paddingHorizontal: 12 }}>
-                      <Text style={styles.foodName} numberOfLines={2}>{item.name}</Text>
-                      {item.brand ? <Text style={styles.foodBrand}>{item.brand}</Text> : null}
+                      <Text style={[styles.foodName, { color: palette.textPrimary }]} numberOfLines={2}>{item.name}</Text>
+                      {item.brand ? <Text style={[styles.foodBrand, { color: palette.textMuted }]}>{item.brand}</Text> : null}
                     </View>
-                    <Text style={styles.foodKcal}>
+                    <Text style={[styles.foodKcal, { color: palette.accent }]}>
                       {item.kcal100g != null ? `${Math.round(item.kcal100g)} ккал/100г` : '—'}
                     </Text>
                   </TouchableOpacity>
                 );
               }}
               ListEmptyComponent={
-                !searching && query.length ? <Text style={styles.empty}>Начните поиск блюда</Text> : null
+                !searching && query.length ? <Text style={[styles.empty, { color: palette.textMuted }]}>Начните поиск блюда</Text> : null
               }
             />
 
             {selected ? (
               <Card style={styles.panelCard}>
-                <Text style={styles.panelName} numberOfLines={1}>{selected.name}</Text>
+                <Text style={[styles.panelName, { color: palette.textPrimary }]} numberOfLines={1}>{selected.name}</Text>
                 <View style={styles.gramsRow}>
-                  <Text style={styles.panelLabel}>Вес порции, г</Text>
+                  <Text style={[styles.panelLabel, { color: palette.textSecondary }]}>Вес порции, г</Text>
                   <TextField
                     keyboardType="numeric"
                     value={grams}
                     onChangeText={setGrams}
-                    inputStyle={styles.gramsInput}
+                    inputStyle={[styles.gramsInput, { backgroundColor: palette.surfaceAlt }]}
                     style={styles.gramsField}
                   />
                 </View>
@@ -231,13 +232,13 @@ export default function LogScreen() {
           </>
         ) : (
           <Card>
-            <TouchableOpacity style={styles.photoDrop} onPress={onPickPhoto}>
+            <TouchableOpacity style={[styles.photoDrop, { backgroundColor: palette.surfaceAlt, borderColor: palette.border }]} onPress={onPickPhoto}>
               {photoUri ? (
                 <Image source={{ uri: photoUri }} style={styles.photoPreview} />
               ) : (
                 <View style={styles.photoEmpty}>
                   <Icon name="photo" size={32} color={palette.accent} />
-                  <Text style={styles.photoEmptyText}>Выберите фото приёма пищи</Text>
+                  <Text style={[styles.photoEmptyText, { color: palette.textMuted }]}>Выберите фото приёма пищи</Text>
                 </View>
               )}
             </TouchableOpacity>
@@ -252,7 +253,7 @@ export default function LogScreen() {
                   variant="secondary"
                   style={styles.spacer}
                 />
-                <Text style={styles.photoHint}>
+                <Text style={[styles.photoHint, { color: palette.textMuted }]}>
                   Оценка по фото — демо-режим. Для точности подключите реальный распознаватель.
                 </Text>
                 <TextField
@@ -288,48 +289,46 @@ export default function LogScreen() {
 }
 
 const styles = StyleSheet.create({
-  flex: { flex: 1, backgroundColor: palette.bg },
+  flex: { flex: 1 },
   container: { padding: space.xl, paddingTop: 16 },
-  modeRow: { flexDirection: 'row', backgroundColor: palette.surfaceAlt, borderRadius: 14, padding: 4, marginBottom: space.lg },
+  modeRow: { flexDirection: 'row', borderRadius: 14, padding: 4, marginBottom: space.lg },
   modeTab: { flex: 1, flexDirection: 'row', alignItems: 'center', justifyContent: 'center', paddingVertical: 9, borderRadius: 11 },
-  modeTabActive: { backgroundColor: palette.surface },
-  modeTabText: { marginLeft: 6, fontSize: type.body, fontWeight: type.semibold, color: palette.textMuted },
+  modeTabActive: {},
+  modeTabText: { marginLeft: 6, fontSize: type.body, fontWeight: type.semibold },
 
   searchRow: { flexDirection: 'row', alignItems: 'flex-start', gap: 10, marginBottom: 8 },
-  searchInput: { backgroundColor: palette.surface },
-  searchBtn: { backgroundColor: palette.accent, borderRadius: 12, paddingHorizontal: 18, paddingVertical: 14, alignItems: 'center', justifyContent: 'center' },
+  searchInput: {},
+  searchBtn: { borderRadius: 12, paddingHorizontal: 18, paddingVertical: 14, alignItems: 'center', justifyContent: 'center' },
   searchBtnText: { color: '#fff', fontWeight: '600' },
 
   food: {
     flexDirection: 'row',
     alignItems: 'center',
-    backgroundColor: palette.surface,
     marginBottom: space.sm,
     padding: 10,
     borderRadius: 14,
     borderWidth: 1,
-    borderColor: palette.border,
   },
-  foodActive: { borderColor: palette.accent, backgroundColor: palette.accentSoft },
-  foodThumb: { width: 44, height: 44, borderRadius: 10, backgroundColor: palette.surfaceAlt },
+  foodActive: {},
+  foodThumb: { width: 44, height: 44, borderRadius: 10 },
   foodThumbEmpty: { alignItems: 'center', justifyContent: 'center' },
-  foodName: { fontSize: 15, color: palette.textPrimary },
-  foodBrand: { fontSize: 12, color: palette.textMuted, marginTop: 2 },
-  foodKcal: { fontSize: 13, color: palette.accent, fontWeight: type.semibold, marginLeft: 8 },
-  empty: { textAlign: 'center', color: palette.textMuted, marginTop: 24 },
+  foodName: { fontSize: 15 },
+  foodBrand: { fontSize: 12, marginTop: 2 },
+  foodKcal: { fontSize: 13, fontWeight: type.semibold, marginLeft: 8 },
+  empty: { textAlign: 'center', marginTop: 24 },
 
   panelCard: { marginTop: space.sm },
-  panelName: { fontSize: 16, fontWeight: type.semibold, color: palette.textPrimary, marginBottom: space.md },
+  panelName: { fontSize: 16, fontWeight: type.semibold, marginBottom: space.md },
   gramsRow: { flexDirection: 'row', alignItems: 'flex-end', marginBottom: space.md },
-  panelLabel: { fontSize: 14, color: palette.textSecondary, marginRight: 12 },
+  panelLabel: { fontSize: 14, marginRight: 12 },
   gramsField: { flex: 1 },
-  gramsInput: { textAlign: 'center', backgroundColor: palette.surfaceAlt },
+  gramsInput: { textAlign: 'center' },
 
-  photoDrop: { borderRadius: 14, overflow: 'hidden', backgroundColor: palette.surfaceAlt, borderWidth: 1, borderColor: palette.border },
+  photoDrop: { borderRadius: 14, overflow: 'hidden', borderWidth: 1 },
   photoPreview: { width: '100%', height: 180, resizeMode: 'cover' },
   photoEmpty: { height: 150, alignItems: 'center', justifyContent: 'center' },
-  photoEmptyText: { marginTop: 8, color: palette.textMuted, fontSize: type.body },
-  photoHint: { fontSize: type.caption, color: palette.textMuted, textAlign: 'center', marginTop: 8, lineHeight: 16 },
+  photoEmptyText: { marginTop: 8, fontSize: type.body },
+  photoHint: { fontSize: type.caption, textAlign: 'center', marginTop: 8, lineHeight: 16 },
 
   spacer: { marginTop: space.md },
 });
