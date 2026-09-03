@@ -131,6 +131,15 @@
 - **Тесты:** +7 тестов прогрессии в `model.test.mjs` — всего **19/19**.
 - **Kiro-ревью:** математика корректна (краевые случаи), токены темы ок, контраст ок, дизайн не подталкивает к овер-логингу; учтены правки по a11y (label карточки).
 
+## Завершено: Фиксы крашей + категории-модалка + ре-дизайн (круглый стол)
+- **Фикс краша «Настройки»:** в `src/screens/SettingsScreen.js` не был импортирован `View` из `react-native` → `ReferenceError: View is not defined` при открытии экрана (падал и на Android, и на web). Добавлен импорт.
+- **Фикс Icon (латентный):** `src/ui/Icon.js` — `React.Children.toArray(<Fragment>)` в React 19 не разворачивает Fragment, поэтому `cloneElement(el,{stroke})` вешал `stroke` на сам `React.Fragment` → `Invalid prop stroke`. Добавлен `flattenLeaves()`, который разворачивает фрагменты до листовых SVG-примитивов.
+- **Порядок табов (App.js):** `Прогноз → Лог → Календарь → История → Профиль → Настройки` — Профиль перед Настройками (Настройки всегда последние), по конвенции health-трекеров.
+- **Категории-модалка:** новый `src/ui/CategoryModal.js` — bottom-sheet: «Выбрать все / Снять выбор» + фильтр-чипы (flow-layout, счётчик, галочки) + «Применить (N)». Подключена в `HistoryScreen.js`: кнопка «Категории» в шапке, фильтр «Приёмы пищи»/«Дефекации» с select-all, счётчик в бейдже, мгновенная фильтрация списка.
+- **«Воздушнее»:** базовый отступ карточек 12→16px (`theme/index.js`), секции (`Section`) — больше вертикального воздуха + трекинг, hero-карточка прогноза увеличенными отступами, убраны hairline-разделители у факторов (whitespace вместо линий).
+- **Проверки:** Babel 9/9, `npm test` 38/38, `expo export --platform web` OK (новый бандл), Android-бандл содержит `CategoryModal`+`flattenLeaves`.
+- **Коммит main:** `0cde6d1`. **Deploy gh-pages:** `3877dc4` (новый бандл `AppEntry-76576a0c…`).
+
 ## Relevant Files
 - `src/theme/index.js`, `src/theme/palettes.js` (новый), `src/theme/theme-context.js` (новый)
 - `src/ui/` — все компоненты переведены на `useThemeColors()` (Card, Button, Chip, Icon, ScreenHeader, Section, TextField)
