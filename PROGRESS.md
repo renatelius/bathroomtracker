@@ -157,15 +157,33 @@
 - **Приватность:** карточка «Приватность» в Настройках (хранение только на устройстве, без телеметрии, фото обрабатываются локально), подтверждение перед экспортом («Экспорт данных? — файл содержит личные данные о здоровье»), формулировка импорта дополнена «Обработка локальная — данные не отправляются».
 - **Проверки:** Babel 3/3, `npm test` 38/38, деп-линк-тесты 12/12, `expo export --platform web` OK (бандл 1.542 MB; маркеры: «Скопировать в буфер», «Приватность», `setStringAsync`, `hashchange` — подтверждены декодированием).
 
+## Завершено: Premium wellness редизайн — круглый стол (Kiro + research)
+- **Круглый стол «Premium wellness» (4 агента):** бриф по ТЗ (5 экранов, синий #2563EB); Kiro-анализ кода (~25–30 файлов, инкрементальная миграция), research-позиции (Apple Health + M3 Expressive). Пользователь выбрал строго по ТЗ: **Primary синий #2563EB**, cyan #38BDF8 вторичный (research рекомендовал teal, но ТЗ приоритетнее).
+- **Палитра (`src/theme/palettes.js`):** premium blue — light: bg `#F8FAFC`, accent `#2563EB`, secondary `#38BDF8`, teal `#0D9488` (ЖКТ-акцент), success `#16A34A` + `successText #166534` (фикс контраста white-on-green 2.8:1), warning `#D97706`, danger `#DC2626`; dark: bg `#0F172A`, surface `#1E293B`, accent `#3B82F6`. Новые токены: `gradient`/`gradientSoft`/`gradientTeal`, `teal`/`tealSoft`.
+- **Дизайн-система (`src/theme/index.js`):** радиусы sm 14 / md 20 / lg 24 / xl 32 / pill; `shadow.accent` синий #2563EB (мягкая тень 6/16/0.28); space.xxxxl 48; типографика hero 34/title 24/overline 700.
+- **Home («Прогноз» → «Сегодня», PredictScreen):** hero-LinearGradient `palette.gradient` (синий→циан) + **ProgressRing** (кольцо прогресса дня, в центре число отметок за сегодня), таймлайн «Сегодня» (точки, время, pill «отмечено», успех-контраст), header «Сегодня/День по плану», иконка таба `home`. i18n: `tabForecast` → «Сегодня»/Today/Hoy/Heute/Aujourd'hui (5 локалей); DEEP_SCREENS: `сегодня|today|home` + алиасы `прогноз|prediction|predict`.
+- **Статистика (новый экран `src/screens/StatisticsScreen.js`):** таб «Статистика» (иконка `chart`), сводка 4 карточек (записи/интервал/серия/рекорд), **теплокарта 12 недель** (7×12 сетка, dayKey по UTC-дням), «Ритм недели» (7 баров Пн–Вс), «Регулярность» (consistency% + кольцо, разброс интервалов ±σ).
+- **Иконки (`src/ui/Icon.js`):** добавлены `home`, `leaf`, `drop`, `cloud`, `chart`, `clock`, `lock`.
+- **Иконки приложения:** ручной PNG-генератор (`C:\Users\Ren\AppData\Local\Temp\opencode\make_icons2.js`) — gradient-фон, белый badge с vesica-листом; `assets/icon.png` 1024, `adaptive-icon.png` 1024 (транспарент), `favicon.png` 256, `splash-icon.png` 512; app.json: adaptive bg `#2563EB`, splash `#F8FAFC`; завернут в `dist/favicon.ico` (PNG-in-ICO) после экспорта.
+- **Онбординг:** герой-blob `LinearGradient palette.gradient` + leaf-иконка на 1-м шаге, радиус чипов 14→`radius.md`.
+- **Календарь:** карточка прогноза `radius.lg`+`shadow.card`.
+- **Проверки:** `npm test` 38/38; `expo export --platform web` OK (бандл `AppEntry-a4f9a4d3…`, 1.559 MB). Кириллица в бандле unicode-escaped (`\uXXXX`) — live-маркеры проверены декодированием: «Сегодня», «Статистика», «Карта активности», «Скопировать в буфер», `2563EB` — все OK, бандл live 200 = 1559081 B (совпадает с локальным).
+- **Коммиты:** main `cdaddeb` («Premium wellness redesign…»), gh-pages `5a211d6`; пуш verify: `0250e69..cdaddeb main`, `cdf86f4..5a211d6 gh-pages`. Примечание: `.quick/tasks/task-01.md` перед коммитом откачен (`git checkout`).
+
+## Заметки для следующей сессии
+- Иконки-«leaf/drop/cloud/chart» добавлены в Icon, но пока не все задействованы в UI (leaf — пустые состояния; если внедрять «каплю воды», «бэкап-облако» — проверять по местам).
+- Бристольская шкала из ТЗ НЕ внедрена: модель хранит только `id/timeMs` — требует расширения схемы данных (bristol/comfort) + миграции. Теплокарта/графики реализованы на частоте.
+- Онбординг по ТЗ (3 промо-экрана) не переделывался: текущий онбординг совмещён с профилем (нужен для прогноза); hero-blob добавлен, но структура шагов сохранена.
+- Chrome MCP настроен в `C:\Users\Ren\.config\opencode\opencode.jsonc` (ч/з `B:\nodejs24\node.exe`), но модель `big-pickle` не читает изображения — скриншоты недоступны, работают текст-инструменты DevTools.
+- Live-вкладка «Статистика» и «Сегодня» — данные пусты до добавления записей (пустые состояния премиум есть на обоих экранах).
+
 ## Relevant Files
-- `src/theme/index.js`, `src/theme/palettes.js` (новый), `src/theme/theme-context.js` (новый)
-- `src/ui/` — все компоненты переведены на `useThemeColors()` (Card, Button, Chip, Icon, ScreenHeader, Section, TextField)
-- `src/services/vision.js` — mock-оценка калорий по фото
-- `src/screens/*` — PredictScreen, LogScreen, ProfileScreen и др.
-- `src/i18n/locales.js`, `src/i18n/index.js`
-- `src/store/storage.js` — ключ `bt.lang`, `getLang`/`saveLang`
-- `scripts/gen-icons.mjs` — генератор PNG-иконок
-- `App.js` — табы + I18nProvider + ThemeProvider + иконки табов
-- `app.json` — иконки/adaptive `#2F7D63`, splash `#F4F6F3`
-- `.quick/tasks/task-01.md` — для Amazon Quick
-- `C:\Users\Ren\AppData\Local\Temp\opencode\kiro_ux_market.txt` — вердикт Kiro по UX-анализу
+- `src/theme/index.js`, `src/theme/palettes.js` (новые premium blue), `src/theme/theme-context.js`
+- `src/ui/` — Card (gradient), Button (radius.md), ProgressRing (новый), Icon (home/leaf/drop/cloud/chart/clock/lock)
+- `src/screens/StatisticsScreen.js` (новый), PredictScreen.js (Home), Onboarding.js, CalendarScreen.js
+- `src/i18n/locales.js` — `tabForecast` → «Сегодня» во всех 5 локалях
+- `App.js` — табы: Сегодня/История/Календарь/Статистика/Профиль (+скрытые Лог/Настройки), DEEP_SCREENS обновлён
+- `assets/` — icon.png/adaptive-icon.png/favicon.png/splash-icon.png (сгенерированы из temp)
+- `app.json` — adaptive bg `#2563EB`, splash `#F8FAFC`
+- `.quick/tasks/task-01.md` — для Amazon Quick (не коммитить)
+- `C:\Users\Ren\AppData\Local\Temp\opencode\make_icons2.js` — генератор иконок; `livefinal.js`/`cdnpoll2.js` — проверки
