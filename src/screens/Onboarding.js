@@ -9,9 +9,10 @@ import {
   TouchableOpacity,
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
+import { LinearGradient } from 'expo-linear-gradient';
 import { saveProfile } from '../store/storage';
 import { ScreenHeader, Chip, Button, TextField, Icon } from '../ui';
-import { useThemeColors, type, space } from '../theme';
+import { useThemeColors, type, space, radius } from '../theme';
 
 const BODY_TYPES = [
   { key: 'asthenic', label: 'Астеник (худощавый)' },
@@ -79,6 +80,18 @@ export default function Onboarding({ onDone }) {
           contentContainerStyle={styles.container}
           keyboardShouldPersistTaps="handled"
         >
+          {step === 0 && (
+            <LinearGradient
+              colors={palette.gradient}
+              start={{ x: 0, y: 0 }}
+              end={{ x: 1, y: 1 }}
+              style={styles.heroBlob}
+            >
+              <View style={styles.heroIcon}>
+                <Icon name="leaf" size={34} color={palette.textOnAccent} />
+              </View>
+            </LinearGradient>
+          )}
           <ScreenHeader title={current.title} subtitle={current.subtitle} icon={current.icon} />
 
           {step === 0 && (
@@ -215,6 +228,23 @@ function TouchableChip({ active, onPress, children }) {
 const styles = StyleSheet.create({
   flex: { flex: 1 },
   container: { padding: space.xl, paddingTop: 20 },
+  heroBlob: {
+    alignSelf: 'center',
+    width: 148,
+    height: 148,
+    borderRadius: radius.pill,
+    alignItems: 'center',
+    justifyContent: 'center',
+    marginBottom: space.xl,
+  },
+  heroIcon: {
+    width: 72,
+    height: 72,
+    borderRadius: radius.lg,
+    backgroundColor: 'rgba(255,255,255,0.2)',
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
   progressWrap: {
     flexDirection: 'row',
     gap: 8,
@@ -241,7 +271,7 @@ const styles = StyleSheet.create({
     marginBottom: space.sm,
     paddingVertical: space.md,
     paddingHorizontal: 16,
-    borderRadius: 14,
+    borderRadius: radius.md,
     borderWidth: 1,
     minHeight: 48,
     justifyContent: 'center',

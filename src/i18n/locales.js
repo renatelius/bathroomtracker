@@ -12,7 +12,7 @@ export const LANGS = [
 
 export const LOCALES = {
   ru: {
-    tabForecast: 'Прогноз',
+    tabForecast: 'Сегодня',
     tabLog: 'Лог',
     tabCalendar: 'Календарь',
     tabHistory: 'История',
@@ -33,7 +33,7 @@ export const LOCALES = {
     name: 'Имя',
   },
   en: {
-    tabForecast: 'Forecast',
+    tabForecast: 'Today',
     tabLog: 'Log',
     tabCalendar: 'Calendar',
     tabHistory: 'History',
@@ -54,7 +54,7 @@ export const LOCALES = {
     name: 'Name',
   },
   es: {
-    tabForecast: 'Pronóstico',
+    tabForecast: 'Hoy',
     tabLog: 'Registro',
     tabCalendar: 'Calendario',
     tabHistory: 'Historial',
@@ -75,7 +75,7 @@ export const LOCALES = {
     name: 'Nombre',
   },
   de: {
-    tabForecast: 'Vorhersage',
+    tabForecast: 'Heute',
     tabLog: 'Protokoll',
     tabCalendar: 'Kalender',
     tabHistory: 'Verlauf',
@@ -96,7 +96,7 @@ export const LOCALES = {
     name: 'Name',
   },
   fr: {
-    tabForecast: 'Prévision',
+    tabForecast: 'Aujourd’hui',
     tabLog: 'Journal',
     tabCalendar: 'Calendrier',
     tabHistory: 'Historique',

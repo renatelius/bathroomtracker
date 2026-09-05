@@ -15,6 +15,7 @@ import { onNotificationTap } from './src/services/notifications';
 import Onboarding from './src/screens/Onboarding';
 import LogScreen from './src/screens/LogScreen';
 import PredictScreen from './src/screens/PredictScreen';
+import StatisticsScreen from './src/screens/StatisticsScreen';
 import CalendarScreen from './src/screens/CalendarScreen';
 import HistoryScreen from './src/screens/HistoryScreen';
 import SettingsScreen from './src/screens/SettingsScreen';
@@ -35,14 +36,18 @@ const TAB_BAR_HEIGHT = Platform.OS === 'android' ? 56 : 49;
 const DEEP_SCREENS = {
   '': null,
   main: null,
-  home: null,
-  прогноз: 'Прогноз',
-  prediction: 'Прогноз',
-  predict: 'Прогноз',
+  home: 'Сегодня',
+  today: 'Сегодня',
+  сегодня: 'Сегодня',
+  прогноз: 'Сегодня',
+  prediction: 'Сегодня',
+  predict: 'Сегодня',
   история: 'История',
   history: 'История',
   календарь: 'Календарь',
   calendar: 'Календарь',
+  статистика: 'Календарь',
+  stats: 'Календарь',
   лог: 'Лог',
   log: 'Лог',
   add: 'Лог',
@@ -202,7 +207,11 @@ function HomeTabBar(props) {
         style={[styles.fabLayer, { bottom: insets.bottom + TAB_BAR_HEIGHT + 8 }]}
       >
         <TouchableOpacity
-          style={[styles.fab, { backgroundColor: palette.accent }, confirmed && styles.fabConfirmed]}
+          style={[
+            styles.fab,
+            { backgroundColor: palette.accent },
+            confirmed && { backgroundColor: palette.success },
+          ]}
           onPress={() => (confirmed ? undefined : setDialVisible(true))}
           activeOpacity={0.88}
           accessibilityRole="button"
@@ -268,9 +277,10 @@ function MainNavigator() {
           tabBarLabelStyle: { fontSize: 12, fontWeight: '500' },
           tabBarIcon: ({ color, size }) => {
             const icons = {
-              'Прогноз': 'forecast',
+              'Сегодня': 'home',
               'История': 'history',
               'Календарь': 'calendar',
+              'Статистика': 'chart',
               'Лог': 'food',
               'Профиль': 'profile',
               'Настройки': 'settings',
@@ -279,9 +289,10 @@ function MainNavigator() {
           },
         })}
       >
-        <Tab.Screen name="Прогноз" component={PredictScreen} options={{ tabBarLabel: t('tabForecast') }} />
+        <Tab.Screen name="Сегодня" component={PredictScreen} options={{ tabBarLabel: t('tabForecast') }} />
         <Tab.Screen name="История" component={HistoryScreen} options={{ tabBarLabel: t('tabHistory') }} />
         <Tab.Screen name="Календарь" component={CalendarScreen} options={{ tabBarLabel: t('tabCalendar') }} />
+        <Tab.Screen name="Статистика" component={StatisticsScreen} options={{ tabBarLabel: 'Статистика' }} />
         <Tab.Screen
           name="Лог"
           component={LogScreen}
@@ -364,9 +375,6 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     justifyContent: 'center',
     ...shadow.accent,
-  },
-  fabConfirmed: {
-    backgroundColor: '#2E8B57',
   },
   dialBackdrop: { flex: 1, backgroundColor: 'rgba(28,28,26,0.42)' },
   dialHost: {

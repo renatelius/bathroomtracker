@@ -14,7 +14,7 @@ import { predict } from '../model/model.mjs';
 import { computeStats, computeMilestones } from '../model/progression.mjs';
 import { getProfile, getDefecations, getMeals, getSettings, addDefecation } from '../store/storage';
 import { schedulePrediction, cancelPrediction, ensurePermissions } from '../services/notifications';
-import { ScreenHeader, Card, Button, Section, Icon, FadeIn, ProgressionCard } from '../ui';
+import { ScreenHeader, Card, Button, Section, Icon, FadeIn, ProgressionCard, ProgressRing } from '../ui';
 import { useThemeColors, type, space, radius, shadow } from '../theme';
 
 const DAY = 24 * 3600e3;
@@ -24,6 +24,11 @@ function fmtTime(ms, locale) {
   const date = d.toLocaleDateString(locale, { day: 'numeric', month: 'long', weekday: 'long' });
   const time = d.toLocaleTimeString(locale, { hour: '2-digit', minute: '2-digit' });
   return { date, time };
+}
+
+function dateKey(ms) {
+  const d = new Date(ms);
+  return `${d.getFullYear()}-${d.getMonth()}-${d.getDate()}`;
 }
 
 export default function PredictScreen() {
@@ -100,16 +105,27 @@ export default function PredictScreen() {
     }
   }
 
+  const todayKey = dateKey(Date.now());
+
+  const todayEntries = useMemo(
+    () => defecations.filter((d) => dateKey(d.timeMs) === todayKey).sort((a, b) => b.timeMs - a.timeMs),
+    [defecations, todayKey]
+  );
+
+  // Прогресс дня: доля прошедшего времени суток (кольцо в hero).
+  const startOfDay = () => { const d = new Date(); d.setHours(0,0,0,0); return d.getTime(); };
+  const dayProgress = Math.min(1, (Date.now() - startOfDay()) / DAY);
+
   if (!prediction) {
     return (
       <SafeAreaView style={[styles.flex, { backgroundColor: palette.bg }]}>
         <ScrollView contentContainerStyle={styles.container}>
-          <ScreenHeader title="Прогноз" subtitle="Следующая дефекация" icon="forecast" />
+          <ScreenHeader title="Сегодня" subtitle="Ваш день — с чистого листа" icon="home" />
 
           <FadeIn>
             <View style={[styles.emptyBox, { backgroundColor: palette.surface, ...shadow.card }]}>
               <View style={[styles.emptyIcon, { backgroundColor: palette.accentSoft }]}>
-                <Icon name="forecast" size={32} color={palette.accent} />
+                <Icon name="leaf" size={32} color={palette.accent} />
               </View>
               <Text style={[styles.emptyTitle, { color: palette.textPrimary }]}>
                 Пока нет достаточных данных
@@ -153,12 +169,15 @@ export default function PredictScreen() {
       ? `через ~${Math.round(inHours)} ч`
       : `через ~${(inHours / 24).toFixed(1)} дня`;
 
-  // Бар уверенности: контекст = ±2×confidenceH вокруг прогноза.
   const windowMs = prediction.highMs - prediction.lowMs;
   const rangeMs = windowMs * 2 || 1;
   const lowPct = (prediction.lowMs - (prediction.predictedAtMs - rangeMs / 2)) / rangeMs;
   const fillPct = Math.max(0, Math.min(100, (windowMs / rangeMs) * 100));
   const predPct = 50;
+
+  const todayFmtTimes = todayEntries.map((d) =>
+    new Date(d.timeMs).toLocaleTimeString(locale, { hour: '2-digit', minute: '2-digit' })
+  );
 
   return (
     <SafeAreaView style={[styles.flex, { backgroundColor: palette.bg }]}>
@@ -166,20 +185,30 @@ export default function PredictScreen() {
         refreshControl={<RefreshControl refreshing={refreshing} onRefresh={onRefresh} />}
         contentContainerStyle={styles.container}
       >
-        <ScreenHeader title="Прогноз" subtitle="Следующая дефекация" icon="forecast" />
+        <ScreenHeader title="Сегодня" subtitle="День по плану" icon="home" />
 
+        {/* Hero — прогноз + кольцо прогресса дня */}
         <FadeIn>
-          <View
-            style={[styles.hero, { borderRadius: radius.md, ...shadow.accent }]}
+          <LinearGradient
+            colors={palette.gradient}
+            start={{ x: 0, y: 0 }}
+            end={{ x: 1, y: 1 }}
+            style={[styles.hero, { borderRadius: radius.xl, ...shadow.accent }]}
             accessible
             accessibilityLabel={`Следующая дефекация вероятнее всего ${main.date} примерно в ${main.time} (${shiftText}). ${sourceLabel}`}
           >
-            <LinearGradient
-              colors={[palette.accentDark, palette.accent]}
-              start={{ x: 0, y: 0 }}
-              end={{ x: 1, y: 1 }}
-              style={StyleSheet.absoluteFill}
-            />
+            <View style={styles.heroRing}>
+              <ProgressRing
+                size={118}
+                stroke={11}
+                progress={dayProgress}
+                color="#FFFFFF"
+                trackColor="rgba(255,255,255,0.28)"
+                centerValue={todayEntries.length}
+                centerLabel=""
+                centerHint={todayEntries.length === 1 ? 'отметка' : 'отметки'}
+              />
+            </View>
             <Text style={[styles.accentLabel, { color: palette.textOnAccent }]}>
               Следующая дефекация вероятнее всего
             </Text>
@@ -191,31 +220,10 @@ export default function PredictScreen() {
               </View>
             </View>
 
-            {/* Мини-бар окна достоверности */}
-            <View
-              style={styles.barArea}
-              accessible
-              accessibilityLabel={`Окно достоверности: с ${low.date} ${low.time} до ${high.date} ${high.time}, погрешность ±${prediction.confidenceH} ч`}
-            >
+            <View style={styles.barArea} accessible accessibilityLabel={`Окно достоверности: с ${low.date} ${low.time} до ${high.date} ${high.time}, погрешность ±${prediction.confidenceH} ч`}>
               <View style={styles.barTrack}>
-                <View
-                  style={[
-                    styles.barFill,
-                    {
-                      left: `${lowPct * 100}%`,
-                      width: `${fillPct}%`,
-                    },
-                  ]}
-                />
-                <View
-                  style={[
-                    styles.barMarker,
-                    {
-                      left: `${predPct}%`,
-                      backgroundColor: palette.textOnAccent,
-                    },
-                  ]}
-                />
+                <View style={[styles.barFill, { left: `${lowPct * 100}%`, width: `${fillPct}%` }]} />
+                <View style={[styles.barMarker, { left: `${predPct}%` }]} />
               </View>
               <View style={styles.barLabels}>
                 <Text style={styles.barLabelText}>~{low.time}</Text>
@@ -226,10 +234,50 @@ export default function PredictScreen() {
             <View style={styles.sourceRow}>
               <Icon name="forecast" size={14} color={palette.textOnAccent} />
               <Text style={[styles.source, { color: palette.textOnAccent }]}>Метод: {sourceLabel}</Text>
+              <Text style={[styles.barConfidence, { color: palette.textOnAccent }]}>± ~{prediction.confidenceH} ч</Text>
             </View>
-            <Text style={styles.barConfidence}>± ~{prediction.confidenceH} ч</Text>
-          </View>
+          </LinearGradient>
         </FadeIn>
+
+        {/* Сегодня — сводка + мини-таймлайн */}
+        <Section
+          title="Сегодня"
+          right={
+            todayEntries.length > 0 ? (
+              <Text style={{ fontSize: 13, fontWeight: '500', color: palette.textSecondary }}>
+                {todayEntries.length} {todayEntries.length === 1 ? 'запись' : todayEntries.length < 5 ? 'записи' : 'записей'}
+              </Text>
+            ) : null
+          }
+        />
+        <Card tone={todayEntries.length ? 'default' : 'info'}>
+          {todayEntries.length === 0 ? (
+            <View style={styles.dayEmpty}>
+              <Icon name="leaf" size={22} color={palette.accent} />
+              <Text style={[styles.dayEmptyText, { color: palette.textSecondary }]}>
+                Сегодня пока ничего не отмечено. Добавьте запись, чтобы день вошёл в статистику.
+              </Text>
+            </View>
+          ) : (
+            <View>
+              {todayEntries.slice(0, 5).map((d, i) => (
+                <View key={d.id} style={[styles.dayRow, i > 0 && { borderTopWidth: StyleSheet.hairlineWidth, borderTopColor: palette.divider }]}>
+                  <View style={[styles.dayDot, { backgroundColor: palette.accent }]} />
+                  <Text style={[styles.dayTime, { color: palette.textPrimary }]}>{todayFmtTimes[i]}</Text>
+                  <Text style={[styles.dayLabel, { color: palette.textSecondary }]}>Дефекация</Text>
+                  <View style={[styles.dayPill, { backgroundColor: palette.successSoft }]}>
+                    <Text style={[styles.dayPillText, { color: palette.successText }]}>отмечено</Text>
+                  </View>
+                </View>
+              ))}
+              {todayEntries.length > 5 ? (
+                <Text style={[styles.dayMore, { color: palette.textMuted }]}>
+                  и ещё {todayEntries.length - 5} {todayEntries.length - 5 === 1 ? 'запись' : todayEntries.length - 5 < 5 ? 'записи' : 'записей'}
+                </Text>
+              ) : null}
+            </View>
+          )}
+        </Card>
 
         <Button
           title={justLogged ? 'Отмечено' : 'Отметить сейчас — дефекация'}
@@ -298,7 +346,8 @@ const styles = StyleSheet.create({
     paddingVertical: space.xxl,
     paddingHorizontal: space.xl,
   },
-  accentLabel: { fontSize: type.label, fontWeight: '500', opacity: 0.92, marginBottom: space.sm },
+  heroRing: { position: 'absolute', right: space.xl, top: space.xl },
+  accentLabel: { fontSize: type.label, fontWeight: '500', opacity: 0.92, marginBottom: space.sm, marginRight: 120 },
   accentDate: { fontSize: 22, fontWeight: type.heavy, textTransform: 'capitalize' },
   accentTimeRow: { flexDirection: 'row', alignItems: 'center', marginTop: 6 },
   accentTime: { fontSize: 42, fontWeight: type.heavy, letterSpacing: -1 },
@@ -340,23 +389,37 @@ const styles = StyleSheet.create({
   },
   barLabelText: { fontSize: 11, color: '#FFFFFF', opacity: 0.78 },
   barConfidence: {
-    position: 'absolute',
-    right: space.xl,
-    top: space.xxl,
     fontSize: type.caption,
     fontWeight: '600',
-    color: '#FFFFFF',
+    marginLeft: 'auto',
   },
   sourceRow: { flexDirection: 'row', alignItems: 'center', marginTop: space.lg },
-  source: { fontSize: type.caption, marginLeft: 6, opacity: 0.9 },
+  source: { fontSize: type.caption, marginLeft: 6, opacity: 0.9, flexShrink: 1 },
+
+  // today summary
+  dayEmpty: { flexDirection: 'row', alignItems: 'center' },
+  dayEmptyText: { fontSize: type.body, marginLeft: space.md, flex: 1, lineHeight: 22 },
+  dayRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    paddingVertical: space.md,
+  },
+  dayDot: { width: 8, height: 8, borderRadius: radius.pill, marginRight: space.md },
+  dayTime: { fontSize: type.body, fontWeight: '600', marginRight: space.lg },
+  dayLabel: { fontSize: type.body, flex: 1 },
+  dayPill: {
+    borderRadius: radius.pill,
+    paddingHorizontal: 10,
+    paddingVertical: 4,
+  },
+  dayPillText: { fontSize: type.caption, fontWeight: '600' },
+  dayMore: { fontSize: type.caption, marginTop: space.sm, textAlign: 'center' },
 
   // quick log
   quickLog: { marginBottom: 2 },
 
-  // progress
   progressCard: { marginBottom: space.sm },
 
-  // factor rows
   factorRow: {
     flexDirection: 'row',
     alignItems: 'center',
@@ -364,16 +427,11 @@ const styles = StyleSheet.create({
     paddingVertical: 13,
   },
   factorLabel: { fontSize: type.body, flex: 1, paddingRight: 12 },
-  factorPill: {
-    borderRadius: radius.sm,
-    paddingHorizontal: 12,
-    paddingVertical: 5,
-  },
+  factorPill: { borderRadius: radius.sm, paddingHorizontal: 12, paddingVertical: 5 },
   factorValue: { fontSize: 14, fontWeight: '600' },
 
-  // empty state
-  emptyBox: { borderRadius: radius.md, padding: space.xl, alignItems: 'center', marginTop: space.sm },
-  emptyIcon: { width: 64, height: 64, borderRadius: 20, alignItems: 'center', justifyContent: 'center', marginBottom: space.lg },
+  emptyBox: { borderRadius: radius.xl, padding: space.xl, alignItems: 'center', marginTop: space.sm },
+  emptyIcon: { width: 64, height: 64, borderRadius: radius.lg, alignItems: 'center', justifyContent: 'center', marginBottom: space.lg },
   emptyTitle: { fontSize: type.title, fontWeight: '700', textAlign: 'center' },
   emptyText: { fontSize: type.body, textAlign: 'center', marginTop: 6, marginBottom: space.xl, lineHeight: 22 },
   emptyCta: { marginBottom: space.md, alignSelf: 'stretch' },

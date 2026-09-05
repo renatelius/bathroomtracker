@@ -14,7 +14,7 @@ import { predict } from '../model/model.mjs';
 import { getProfile, getDefecations, getMeals } from '../store/storage';
 import { schedulePrediction, cancelPrediction, ensurePermissions } from '../services/notifications';
 import { getSettings } from '../store/storage';
-import { useThemeColors, type, space, radius } from '../theme';
+import { useThemeColors, type, space, radius, shadow } from '../theme';
 import { ScreenHeader, Card, Button, Icon } from '../ui';
 LocaleConfig.locales['ru'] = {
   monthNames: [
@@ -247,10 +247,11 @@ const styles = StyleSheet.create({
   windowSwatch: { width: 16, height: 10, borderRadius: 3, marginRight: 6 },
   legendText: { fontSize: 12 },
   predictionCard: {
-    borderRadius: radius.md,
+    borderRadius: radius.lg,
     padding: space.xl,
     margin: space.xl,
     marginTop: 8,
+    ...shadow.card,
   },
   cardLabel: { fontSize: 13, marginBottom: 6 },
   cardDate: { fontSize: 18, fontWeight: '700', textTransform: 'capitalize' },

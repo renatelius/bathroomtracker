@@ -1,7 +1,7 @@
 /**
- * Дизайн-система BathroomTracker.
- * Спокойный регистр «calm medical»: тёплая палитра (лён/мох/янтарь),
- * пропорциональный типографический скейл, воздух вместо линий.
+ * Дизайн-система BathroomTracker — premium wellness.
+ * Apple Health (спокойный, воздух) + Material 3 Expressive (щедрые радиусы, софт-тени).
+ * Первичный синий #2563EB + циан #38BDF8. SF Pro/Inter, мягкие градиенты, glass-акценты.
  * Единые токены для типа, спейсинга, радиусов, теней и семантики.
  */
 
@@ -11,26 +11,25 @@ export { paletteLight, paletteDark, ThemeProvider, useThemeColors } from './them
 // Основная палитра (по умолчанию — светлая; обратима хуком useThemeColors)
 export const palette = paletteLight;
 
-// Типографика: пропорциональный ряд (Refactoring UI: крупный — плотнее,
-// мелкий — воздушнее). Шрифт системный; для web/RN хорошо ложится Inter.
+// Типографика: Apple Health-скейл (SF Pro / Inter). Крупный — плотнее, мелкий — воздушнее.
 export const type = {
-  hero: 34,
-  title: 24,
-  section: 17,
-  body: 16,
-  label: 13,
-  caption: 12,
+  hero: 34,        // Большой заголовок «Today's Activity»
+  title: 24,       // Названия секций / карточек
+  section: 17,     // Подзаголовки
+  body: 16,        // Основной текст
+  label: 13,       // Подписи
+  caption: 12,     // Вспомогательный текст
 
   heavy: '800',
   semibold: '600',
   medium: '500',
   regular: '400',
-  overline: '600',
+  overline: '700',
   letterSpacingBody: 0.1,
   lineHeight: 1.4,
 };
 
-// Пространство (4px-сетка)
+// Пространство (4px-сетка) — щедрые премиальные отступы
 export const space = {
   xs: 4,
   sm: 8,
@@ -39,56 +38,58 @@ export const space = {
   xl: 20,
   xxl: 28,
   xxxl: 36,
+  xxxxl: 48,
 };
 
-// Радиусы: карточки 16, кнопки 12, шторка 20, пилюли — максимум.
+// Радиусы M3 Expressive: карточки 24, крупные карточки 32, кнопки 14, пилюли — максимум.
 export const radius = {
-  sm: 12,
-  md: 16,
-  lg: 20,
+  sm: 14,
+  md: 20,
+  lg: 24,
+  xl: 32,
   pill: 999,
 };
 
-// Тени (iOS + Android): мягкие, минимальные — глубина через цвет, не тень.
+// Тени: мягкие, воздушные (Apple Health) — глубина через лёгкую тень и blur.
 export const shadow = {
   card: {
-    shadowColor: '#3A3B36',
-    shadowOffset: { width: 0, height: 2 },
+    shadowColor: '#0F172A',
+    shadowOffset: { width: 0, height: 4 },
     shadowOpacity: 0.06,
-    shadowRadius: 6,
-    elevation: 2,
+    shadowRadius: 12,
+    elevation: 3,
   },
   sheet: {
-    shadowColor: '#000000',
-    shadowOffset: { width: 0, height: -2 },
-    shadowOpacity: 0.08,
-    shadowRadius: 12,
-    elevation: 8,
+    shadowColor: '#0F172A',
+    shadowOffset: { width: 0, height: -4 },
+    shadowOpacity: 0.1,
+    shadowRadius: 20,
+    elevation: 10,
   },
   accent: {
-    shadowColor: '#1D5C46',
-    shadowOffset: { width: 0, height: 3 },
-    shadowOpacity: 0.2,
-    shadowRadius: 8,
-    elevation: 3,
+    shadowColor: '#2563EB',
+    shadowOffset: { width: 0, height: 6 },
+    shadowOpacity: 0.28,
+    shadowRadius: 16,
+    elevation: 6,
   },
 };
 
 // Готовые комбинированные стили карточек/кнопок (переиспользуются в экранах)
 export const card = {
   backgroundColor: palette.surface,
-  borderRadius: radius.md,
-  padding: space.lg,
+  borderRadius: radius.lg,
+  padding: space.xl,
   marginBottom: space.lg,
   ...shadow.card,
 };
 
-// Основная кнопка
+// Основная кнопка — премиальная, с мягкой синей тенью
 export const primaryButton = {
   backgroundColor: palette.accent,
-  borderRadius: radius.sm,
-  paddingVertical: 15,
-  paddingHorizontal: space.lg,
+  borderRadius: radius.md,
+  paddingVertical: 16,
+  paddingHorizontal: space.xl,
   alignItems: 'center',
   justifyContent: 'center',
   ...shadow.accent,
