@@ -8,7 +8,7 @@ import { useThemeColors, type, space, radius, shadow } from '../theme';
  * с белым глифом + мягкое кольцо и полупрозрачные акценты.
  * Глифы: leaf | history | chart | search | drop | calendar.
  */
-function Scene({ variant, palette, size }) {
+export function Illustration({ variant, palette, size }) {
   const W = 140;
   const H = 140;
   const [c0, c1] = palette.gradient;
@@ -93,7 +93,7 @@ export default function EmptyState({
         style,
       ]}
     >
-      <Scene variant={variant} palette={palette} size={size} />
+      <Illustration variant={variant} palette={palette} size={size} />
       {title ? (
         <Text style={[styles.title, { color: palette.textPrimary }]}>{title}</Text>
       ) : null}

@@ -9,10 +9,33 @@ import {
   TouchableOpacity,
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
-import { LinearGradient } from 'expo-linear-gradient';
 import { saveProfile } from '../store/storage';
-import { ScreenHeader, Chip, Button, TextField, Icon } from '../ui';
+import { ScreenHeader, Chip, Button, TextField, Icon, Illustration } from '../ui';
 import { useThemeColors, type, space, radius } from '../theme';
+
+const PROMOS = [
+  {
+    variant: 'leaf',
+    kicker: 'Спокойствие',
+    title: 'Наблюдайте за своим ритмом',
+    subtitle:
+      'Отмечайте визиты — и приложение покажет, когда вероятнее всего заглянуть снова. Данные хранятся только на устройстве.',
+  },
+  {
+    variant: 'chart',
+    kicker: 'Ясность',
+    title: 'Увидьте свой ритм недели',
+    subtitle:
+      'Карта активности и статистика подсвечивают закономерности — регулярность, серии и распределение по Бристольской шкале.',
+  },
+  {
+    variant: 'drop',
+    kicker: 'Предсказуемость',
+    title: 'Прогноз с напоминанием',
+    subtitle:
+      'Получайте мягкое уведомление в вероятное время или настраивайте оповещение под себя.',
+  },
+];
 
 const BODY_TYPES = [
   { key: 'asthenic', label: 'Астеник (худощавый)' },
@@ -21,7 +44,7 @@ const BODY_TYPES = [
 ];
 
 const STEPS = [
-  { title: 'Добро пожаловать', subtitle: 'Расскажите о себе: эти данные нужны для точного прогноза и никуда не отправляются.', icon: 'profile' },
+  { title: 'О себе', subtitle: 'Расскажите о себе: эти данные нужны для точного прогноза и никуда не отправляются.', icon: 'profile' },
   { title: 'Рост и вес', subtitle: 'Антропометрия помогает точнее оценивать интервалы и регулярность.', icon: 'list' },
   { title: 'Тип телосложения', subtitle: 'Влияет на интерпретацию норм — ничего не отправляется.', icon: 'profile' },
   { title: 'Готово', subtitle: 'Проверьте данные — их всегда можно изменить позже в профиле.', icon: 'check' },
@@ -29,6 +52,7 @@ const STEPS = [
 
 export default function Onboarding({ onDone }) {
   const palette = useThemeColors();
+  const [promo, setPromo] = useState(0); // 0..PROMOS.length-1, null -> профиль
   const [step, setStep] = useState(0);
   const [sex, setSex] = useState(null);
   const [heightCm, setHeightCm] = useState('');
@@ -61,6 +85,53 @@ export default function Onboarding({ onDone }) {
     onDone(profile);
   }
 
+  if (promo !== null) {
+    const p = PROMOS[promo];
+    const last = promo === PROMOS.length - 1;
+    return (
+      <SafeAreaView style={[styles.flex, { backgroundColor: palette.bg }]}>
+        <View style={styles.promoHeader}>
+          <TouchableOpacity
+            onPress={() => setPromo(null)}
+            hitSlop={6}
+            accessibilityRole="button"
+            accessibilityLabel="Пропустить введение"
+          >
+            <Text style={[styles.promoSkip, { color: palette.textSecondary }]}>Пропустить</Text>
+          </TouchableOpacity>
+        </View>
+
+        <View style={styles.promoBody}>
+          <View style={[styles.promoArt, { backgroundColor: palette.accentSoft }]}>
+            <Illustration variant={p.variant} palette={palette} size={210} />
+          </View>
+          <Text style={[styles.promoKicker, { color: palette.accent }]}>{p.kicker}</Text>
+          <Text style={[styles.promoTitle, { color: palette.textPrimary }]}>{p.title}</Text>
+          <Text style={[styles.promoSubtitle, { color: palette.textSecondary }]}>{p.subtitle}</Text>
+
+          <View style={styles.promoDots} accessibilityLabel={`Шаг ${promo + 1} из ${PROMOS.length}`}>
+            {PROMOS.map((_, i) => (
+              <View
+                key={i}
+                style={[
+                  styles.promoDot,
+                  i === promo ? { backgroundColor: palette.accent, width: 22 } : { backgroundColor: palette.accentSoft },
+                ]}
+              />
+            ))}
+          </View>
+
+          <Button
+            title={last ? 'Начать' : 'Далее'}
+            icon="check"
+            onPress={() => (last ? setPromo(null) : setPromo(promo + 1))}
+            style={styles.promoCta}
+          />
+        </View>
+      </SafeAreaView>
+    );
+  }
+
   const current = STEPS[step];
 
   return (
@@ -80,18 +151,6 @@ export default function Onboarding({ onDone }) {
           contentContainerStyle={styles.container}
           keyboardShouldPersistTaps="handled"
         >
-          {step === 0 && (
-            <LinearGradient
-              colors={palette.gradient}
-              start={{ x: 0, y: 0 }}
-              end={{ x: 1, y: 1 }}
-              style={styles.heroBlob}
-            >
-              <View style={styles.heroIcon}>
-                <Icon name="leaf" size={34} color={palette.textOnAccent} />
-              </View>
-            </LinearGradient>
-          )}
           <ScreenHeader title={current.title} subtitle={current.subtitle} icon={current.icon} />
 
           {step === 0 && (
@@ -228,23 +287,44 @@ function TouchableChip({ active, onPress, children }) {
 const styles = StyleSheet.create({
   flex: { flex: 1 },
   container: { padding: space.xl, paddingTop: 20 },
-  heroBlob: {
+
+  promoHeader: { alignItems: 'flex-end', paddingHorizontal: space.xl, paddingTop: space.lg },
+  promoSkip: { fontSize: type.body, fontWeight: '600', paddingVertical: 6, paddingHorizontal: 8 },
+  promoBody: { flex: 1, justifyContent: 'center', paddingHorizontal: space.xl, paddingBottom: space.xl },
+  promoArt: {
     alignSelf: 'center',
-    width: 148,
-    height: 148,
-    borderRadius: radius.pill,
+    width: 272,
+    height: 224,
+    borderRadius: radius.xl,
     alignItems: 'center',
     justifyContent: 'center',
+    marginBottom: space.xxl,
+  },
+  promoKicker: {
+    fontSize: type.label,
+    fontWeight: '700',
+    letterSpacing: 0.6,
+    textTransform: 'uppercase',
+    textAlign: 'center',
+  },
+  promoTitle: { fontSize: type.hero, fontWeight: type.heavy, textAlign: 'center', marginTop: space.sm, letterSpacing: -0.6 },
+  promoSubtitle: {
+    fontSize: type.body,
+    lineHeight: 23,
+    textAlign: 'center',
+    marginTop: space.md,
+    paddingHorizontal: space.sm,
+  },
+  promoDots: {
+    flexDirection: 'row',
+    justifyContent: 'center',
+    gap: 8,
+    marginTop: space.xxl,
     marginBottom: space.xl,
   },
-  heroIcon: {
-    width: 72,
-    height: 72,
-    borderRadius: radius.lg,
-    backgroundColor: 'rgba(255,255,255,0.2)',
-    alignItems: 'center',
-    justifyContent: 'center',
-  },
+  promoDot: { height: 8, borderRadius: 4 },
+  promoCta: { alignSelf: 'stretch' },
+
   progressWrap: {
     flexDirection: 'row',
     gap: 8,
