@@ -4,7 +4,7 @@ import { SafeAreaView } from 'react-native-safe-area-context';
 import { useFocusEffect } from '@react-navigation/native';
 import { computeStats } from '../model/progression.mjs';
 import { getDefecations } from '../store/storage';
-import { ScreenHeader, Card, Section, Icon, FadeIn } from '../ui';
+import { ScreenHeader, Card, Section, Icon, FadeIn, EmptyState } from '../ui';
 import { useThemeColors, type, space, radius, shadow } from '../theme';
 
 const DAY = 24 * 3600e3;
@@ -161,7 +161,17 @@ export default function StatisticsScreen() {
           </View>
         </FadeIn>
 
-        <Section
+        {isEmpty ? (
+          <FadeIn>
+            <EmptyState
+              variant="chart"
+              title="Здесь появится ваша статистика"
+              subtitle="Добавьте записи дефекации — и здесь будут карта активности, ритм недели и распределение по Бристольской шкале."
+            />
+          </FadeIn>
+        ) : (
+          <>
+            <Section
           title="Карта активности"
           right={
             stats.activeDays > 0 ? (
@@ -287,6 +297,8 @@ export default function StatisticsScreen() {
             Разброс интервалов: ±{stats.intervalStdH ? stats.intervalStdH.toFixed(1) : '—'} ч — чем меньше, тем ритмичнее ваш день.
           </Text>
         </Card>
+          </>
+        )}
       </ScrollView>
     </SafeAreaView>
   );

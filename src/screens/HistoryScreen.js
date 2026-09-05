@@ -10,7 +10,7 @@ import {
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { useFocusEffect } from '@react-navigation/native';
 import { getMeals, getDefecations, removeMeal, removeDefecation } from '../store/storage';
-import { ScreenHeader, Card, Icon, FadeIn, CategoryModal } from '../ui';
+import { ScreenHeader, Card, Icon, FadeIn, CategoryModal, EmptyState } from '../ui';
 import { useThemeColors, type, space, radius } from '../theme';
 
 const CATEGORIES = [
@@ -155,19 +155,23 @@ export default function HistoryScreen() {
         keyExtractor={(item) => `${item.kind}_${item.id}`}
         renderItem={renderItem}
         ListEmptyComponent={
-          <View style={styles.emptyBox}>
-            <View style={[styles.emptyIcon, { backgroundColor: palette.accentSoft }]}>
-              <Icon name="list" size={26} color={palette.accent} />
-            </View>
-            <Text style={[styles.empty, { color: palette.textPrimary }]}>
-              {combined.length ? 'В этих категориях пока нет записей' : 'Пока нет записей'}
-            </Text>
-            {combined.length === 0 ? (
-              <Text style={[styles.emptySub, { color: palette.textSecondary }]}>
-                Добавьте первую запись — и история начнёт складываться.
+          combined.length === 0 ? (
+            <EmptyState
+              variant="history"
+              title="Пока нет записей"
+              subtitle="Добавьте первую запись — и история начнёт складываться."
+              style={styles.emptyBox}
+            />
+          ) : (
+            <View style={styles.emptyBox}>
+              <View style={[styles.emptyIcon, { backgroundColor: palette.accentSoft }]}>
+                <Icon name="list" size={26} color={palette.accent} />
+              </View>
+              <Text style={[styles.empty, { color: palette.textPrimary }]}>
+                В этих категориях пока нет записей
               </Text>
-            ) : null}
-          </View>
+            </View>
+          )
         }
         contentContainerStyle={styles.list}
       />

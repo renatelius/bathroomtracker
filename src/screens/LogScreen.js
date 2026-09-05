@@ -30,6 +30,7 @@ export default function LogScreen() {
   const [query, setQuery] = useState('');
   const [results, setResults] = useState([]);
   const [searching, setSearching] = useState(false);
+  const [searched, setSearched] = useState(false);
   const [selected, setSelected] = useState(null);
   const [grams, setGrams] = useState(String(DEFAULT_GRAMS));
 
@@ -74,6 +75,7 @@ export default function LogScreen() {
       const foods = await searchFoods(query, 20);
       setResults(foods);
       setSelected(null);
+      setSearched(true);
     } catch (e) {
       Alert.alert('Ошибка', e.message || 'Не удалось найти еду');
     } finally {
@@ -86,6 +88,7 @@ export default function LogScreen() {
     setSelected(null);
     setResults([]);
     setQuery('');
+    setSearched(false);
     return mealPayload;
   }
 
@@ -267,7 +270,11 @@ export default function LogScreen() {
                 );
               }}
               ListEmptyComponent={
-                !searching && query.length ? <Text style={[styles.empty, { color: palette.textMuted }]}>Начните поиск блюда</Text> : null
+                !searching && query.length ? (
+                  <Text style={[styles.empty, { color: palette.textMuted }]}>
+                    {searched ? 'Ничего не найдено. Попробуйте иначе.' : 'Начните поиск блюда'}
+                  </Text>
+                ) : null
               }
             />
 

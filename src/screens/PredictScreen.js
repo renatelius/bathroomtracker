@@ -14,7 +14,7 @@ import { predict } from '../model/model.mjs';
 import { computeStats, computeMilestones } from '../model/progression.mjs';
 import { getProfile, getDefecations, getMeals, getSettings, addDefecation } from '../store/storage';
 import { schedulePrediction, cancelPrediction, ensurePermissions } from '../services/notifications';
-import { ScreenHeader, Card, Button, Section, Icon, FadeIn, ProgressionCard, ProgressRing, DefecationModal } from '../ui';
+import { ScreenHeader, Card, Button, Section, Icon, FadeIn, ProgressionCard, ProgressRing, DefecationModal, EmptyState } from '../ui';
 import { useThemeColors, type, space, radius, shadow } from '../theme';
 
 const DAY = 24 * 3600e3;
@@ -124,16 +124,11 @@ export default function PredictScreen() {
           <ScreenHeader title="Сегодня" subtitle="Ваш день — с чистого листа" icon="home" />
 
           <FadeIn>
-            <View style={[styles.emptyBox, { backgroundColor: palette.surface, ...shadow.card }]}>
-              <View style={[styles.emptyIcon, { backgroundColor: palette.accentSoft }]}>
-                <Icon name="leaf" size={32} color={palette.accent} />
-              </View>
-              <Text style={[styles.emptyTitle, { color: palette.textPrimary }]}>
-                Пока нет достаточных данных
-              </Text>
-              <Text style={[styles.emptyText, { color: palette.textSecondary }]}>
-                Добавьте первую запись — прогноз появится после пары дней наблюдений.
-              </Text>
+            <EmptyState
+              variant="leaf"
+              title="Пока нет достаточных данных"
+              subtitle="Добавьте первую запись — прогноз появится после пары дней наблюдений."
+            >
               <Button
                 title={justLogged ? 'Отмечено' : 'Записать дефекацию'}
                 icon={justLogged ? 'check' : 'check'}
@@ -146,7 +141,7 @@ export default function PredictScreen() {
                 variant="secondary"
                 onPress={() => navigation.navigate('Лог', { initialMode: 'search' })}
               />
-            </View>
+            </EmptyState>
           </FadeIn>
         </ScrollView>
         <DefecationModal
