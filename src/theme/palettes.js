@@ -26,11 +26,12 @@ export const paletteLight = {
 
   info: '#2563EB',
   infoSoft: '#E7EEFD',
-  success: '#16A34A',
-  successSoft: '#E7F6EC',
+  success: '#22C55E',
+  successSoft: '#DCFCE7',
   successText: '#166534',
-  warning: '#D97706',
+  warning: '#F59E0B',
   warningSoft: '#FEF3E2',
+  warningText: '#451A03',
   danger: '#DC2626',
   dangerSoft: '#FDE8E9',
 
@@ -75,6 +76,7 @@ export const paletteDark = {
   successText: '#4ADE80',
   warning: '#F59E0B',
   warningSoft: '#451A03',
+  warningText: '#451A03',
   danger: '#F87171',
   dangerSoft: '#7F1D1D',
 

@@ -22,6 +22,7 @@ export default function Chip({ label, active = false, tone = 'accent', onPress, 
   const { scale, onPressIn, onPressOut } = usePressScale();
   const activeBg =
     tone === 'danger' ? palette.danger : tone === 'warning' ? palette.warning : palette.accent;
+  const activeText = tone === 'warning' ? palette.warningText : palette.textOnAccent;
   return (
     <Animated.View style={[{ transform: [{ scale }] }, style]}>
       <TouchableOpacity
@@ -40,7 +41,7 @@ export default function Chip({ label, active = false, tone = 'accent', onPress, 
         <Text
           style={[
             styles.text,
-            active ? { color: palette.textOnAccent } : { color: palette.textPrimary },
+            active ? { color: activeText } : { color: palette.textPrimary },
             active && styles.activeWeight,
           ]}
         >
