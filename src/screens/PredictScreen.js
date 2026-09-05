@@ -14,7 +14,7 @@ import { predict } from '../model/model.mjs';
 import { computeStats, computeMilestones } from '../model/progression.mjs';
 import { getProfile, getDefecations, getMeals, getSettings, addDefecation } from '../store/storage';
 import { schedulePrediction, cancelPrediction, ensurePermissions } from '../services/notifications';
-import { ScreenHeader, Card, Button, Section, Icon, FadeIn, ProgressionCard, ProgressRing } from '../ui';
+import { ScreenHeader, Card, Button, Section, Icon, FadeIn, ProgressionCard, ProgressRing, DefecationModal } from '../ui';
 import { useThemeColors, type, space, radius, shadow } from '../theme';
 
 const DAY = 24 * 3600e3;
@@ -41,6 +41,7 @@ export default function PredictScreen() {
   const [lead, setLead] = useState(15);
   const [defecations, setDefecations] = useState([]);
   const [justLogged, setJustLogged] = useState(false);
+  const [defModalVisible, setDefModalVisible] = useState(false);
 
   const progStats = useMemo(() => computeStats(defecations), [defecations]);
   const milestones = useMemo(() => computeMilestones(defecations), [defecations]);
@@ -68,8 +69,8 @@ export default function PredictScreen() {
     setRefreshing(false);
   }, [load]);
 
-  async function onQuickDefecation() {
-    await addDefecation({ id: `d_${Date.now()}`, timeMs: Date.now() });
+  async function onSaveDefecation({ bristol, comfort }) {
+    await addDefecation({ id: `d_${Date.now()}`, timeMs: Date.now(), bristol, comfort });
     setJustLogged(true);
     setTimeout(() => setJustLogged(false), 1800);
     await load();
@@ -136,7 +137,7 @@ export default function PredictScreen() {
               <Button
                 title={justLogged ? 'Отмечено' : 'Записать дефекацию'}
                 icon={justLogged ? 'check' : 'check'}
-                onPress={onQuickDefecation}
+                onPress={() => setDefModalVisible(true)}
                 style={styles.emptyCta}
               />
               <Button
@@ -148,6 +149,11 @@ export default function PredictScreen() {
             </View>
           </FadeIn>
         </ScrollView>
+        <DefecationModal
+          visible={defModalVisible}
+          onClose={() => setDefModalVisible(false)}
+          onSave={onSaveDefecation}
+        />
       </SafeAreaView>
     );
   }
@@ -265,9 +271,15 @@ export default function PredictScreen() {
                   <View style={[styles.dayDot, { backgroundColor: palette.accent }]} />
                   <Text style={[styles.dayTime, { color: palette.textPrimary }]}>{todayFmtTimes[i]}</Text>
                   <Text style={[styles.dayLabel, { color: palette.textSecondary }]}>Дефекация</Text>
-                  <View style={[styles.dayPill, { backgroundColor: palette.successSoft }]}>
-                    <Text style={[styles.dayPillText, { color: palette.successText }]}>отмечено</Text>
-                  </View>
+                  {d.bristol ? (
+                    <View style={[styles.dayPill, { backgroundColor: palette.successSoft }]}>
+                      <Text style={[styles.dayPillText, { color: palette.successText }]}>Тип {d.bristol}</Text>
+                    </View>
+                  ) : (
+                    <View style={[styles.dayPill, { backgroundColor: palette.successSoft }]}>
+                      <Text style={[styles.dayPillText, { color: palette.successText }]}>отмечено</Text>
+                    </View>
+                  )}
                 </View>
               ))}
               {todayEntries.length > 5 ? (
@@ -283,7 +295,7 @@ export default function PredictScreen() {
           title={justLogged ? 'Отмечено' : 'Отметить сейчас — дефекация'}
           icon={justLogged ? 'check' : 'check'}
           variant={justLogged ? undefined : 'secondary'}
-          onPress={onQuickDefecation}
+          onPress={() => setDefModalVisible(true)}
           style={styles.quickLog}
         />
 
@@ -329,6 +341,11 @@ export default function PredictScreen() {
           Напоминание: время звонка указано в настройках — перед прогнозом.
         </Text>
       </ScrollView>
+      <DefecationModal
+        visible={defModalVisible}
+        onClose={() => setDefModalVisible(false)}
+        onSave={onSaveDefecation}
+      />
     </SafeAreaView>
   );
 }

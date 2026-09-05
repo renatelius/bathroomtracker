@@ -85,6 +85,10 @@ export default function HistoryScreen() {
                   {item.kcal ? `${Math.round(item.kcal)} ккал` : ''}
                   {item.grams ? ` · ${item.grams} г` : ''}
                 </Text>
+              ) : item.bristol ? (
+                <Text style={[styles.sub, { color: palette.textMuted }]}>
+                  Тип {item.bristol} по Бристолю{item.comfort ? ` · комфорт ${item.comfort}/5` : ''}
+                </Text>
               ) : null}
             </View>
           </View>

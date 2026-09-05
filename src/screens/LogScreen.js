@@ -17,7 +17,7 @@ import { useRoute } from '@react-navigation/native';
 import { searchFoods, kcalForServing } from '../services/foodApi';
 import { addMeal, addDefecation } from '../store/storage';
 import { evaluateMealByPhoto } from '../services/vision';
-import { ScreenHeader, Card, Button, TextField, Icon } from '../ui';
+import { ScreenHeader, Card, Button, TextField, Icon, DefecationModal } from '../ui';
 import { useThemeColors, type, space } from '../theme';
 import * as ImagePicker from 'expo-image-picker';
 
@@ -44,6 +44,7 @@ export default function LogScreen() {
   const [photoCal, setPhotoCal] = useState('');
   const [photoName, setPhotoName] = useState('');
   const [estimating, setEstimating] = useState(false);
+  const [defModalVisible, setDefModalVisible] = useState(false);
 
   // Свайп между под-режимами «Поиск» / «Своё фото»
   const panX = useRef(new Animated.Value(0)).current;
@@ -164,9 +165,13 @@ export default function LogScreen() {
     Alert.alert('Готово', payload.kcal != null ? `Добавлено, ${payload.kcal} ккал` : 'Добавлено без калорий');
   }
 
-  async function logDefecation() {
-    await addDefecation({ id: `d_${Date.now()}`, timeMs: Date.now() });
-    Alert.alert('Готово', 'Дефекация записана');
+  async function logDefecation(details = {}) {
+    await addDefecation({ id: `d_${Date.now()}`, timeMs: Date.now(), ...details });
+    const msg =
+      details.bristol != null
+        ? `Дефекация записана, тип ${details.bristol}${details.comfort != null ? `, комфорт ${details.comfort}/5` : ''}`
+        : 'Дефекация записана';
+    Alert.alert('Готово', msg);
   }
 
   return (
@@ -334,10 +339,15 @@ export default function LogScreen() {
           title="+ Дефекация сейчас"
           icon="check"
           variant="ghost"
-          onPress={logDefecation}
+          onPress={() => setDefModalVisible(true)}
           style={styles.spacer}
         />
       </ScrollView>
+      <DefecationModal
+        visible={defModalVisible}
+        onClose={() => setDefModalVisible(false)}
+        onSave={(d) => logDefecation(d)}
+      />
     </SafeAreaView>
   );
 }

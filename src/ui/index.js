@@ -9,3 +9,5 @@ export { default as FadeIn } from './FadeIn';
 export { default as ProgressionCard } from './ProgressionCard';
 export { default as CategoryModal } from './CategoryModal';
 export { default as ProgressRing } from './ProgressRing';
+export { default as DefecationModal } from './DefecationModal';
+export { BRISTOL_TYPES, COMFORT_LEVELS, BristolScale, ComfortPicker } from './BristolPicker';

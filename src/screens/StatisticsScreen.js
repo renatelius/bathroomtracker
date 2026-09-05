@@ -94,6 +94,20 @@ export default function StatisticsScreen() {
     return counts.map((c) => ({ count: c, pct: c / max }));
   }, [defecations]);
 
+  const bristolStats = useMemo(() => {
+    const counts = [0, 0, 0, 0, 0, 0, 0];
+    for (const d of defecations) {
+      if (d.bristol >= 1 && d.bristol <= 7) counts[d.bristol - 1]++;
+    }
+    const rated = counts.reduce((s, c) => s + c, 0);
+    const max = Math.max(...counts, 1);
+    const comfortList = defecations.filter((d) => d.comfort != null).map((d) => d.comfort);
+    const avgComfort = comfortList.length
+      ? comfortList.reduce((s, c) => s + c, 0) / comfortList.length
+      : null;
+    return { counts, rated, max, avgComfort };
+  }, [defecations]);
+
   const avgText = stats.totalCount
     ? stats.avgIntervalH < 24
       ? `~${Math.round(stats.avgIntervalH)} ч`
@@ -198,6 +212,56 @@ export default function StatisticsScreen() {
                   <Text style={[styles.barCount, { color: palette.textSecondary }]}>{weekdayCounts[i].count}</Text>
                 </View>
               ))}
+            </View>
+          )}
+        </Card>
+
+        <Section
+          title="По Бристольской шкале"
+          right={
+            bristolStats.rated > 0 ? (
+              <Text style={{ fontSize: 13, fontWeight: '500', color: palette.textSecondary }}>
+                {bristolStats.rated} с деталями
+              </Text>
+            ) : null
+          }
+        />
+        <Card tone="default">
+          {bristolStats.rated === 0 ? (
+            <View style={styles.emptyRow}>
+              <Icon name="chart" size={22} color={palette.accent} />
+              <Text style={[styles.emptyText, { color: palette.textSecondary }]}>
+                Укажите тип при записи дефекации — здесь появится распределение.
+              </Text>
+            </View>
+          ) : (
+            <View>
+              {[1, 2, 3, 4, 5, 6, 7].map((t) => {
+                const count = bristolStats.counts[t - 1];
+                const normal = t === 4;
+                return (
+                  <View key={t} style={styles.barRow}>
+                    <Text style={[styles.barLabel, { color: palette.textPrimary }]}>Тип {t}</Text>
+                    <View style={[styles.barTrack, { backgroundColor: palette.surfaceAlt }]}>
+                      <View
+                        style={[
+                          styles.barFill,
+                          {
+                            backgroundColor: normal ? palette.success : palette.accent,
+                            width: count > 0 ? `${Math.max(10, (count / bristolStats.max) * 100)}%` : '0%',
+                          },
+                        ]}
+                      />
+                    </View>
+                    <Text style={[styles.barCount, { color: palette.textSecondary }]}>{count}</Text>
+                  </View>
+                );
+              })}
+              <Text style={[styles.hint, { color: palette.textMuted }]}>
+                {bristolStats.avgComfort != null
+                  ? `Средний комфорт: ${bristolStats.avgComfort.toFixed(1)}/5 · Тип 4 (гладкая колбаска) считается нормой.`
+                  : 'Тип 4 (гладкая колбаска) считается нормой.'}
+              </Text>
             </View>
           )}
         </Card>
