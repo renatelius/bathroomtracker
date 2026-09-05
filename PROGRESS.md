@@ -140,6 +140,17 @@
 - **Проверки:** Babel 9/9, `npm test` 38/38, `expo export --platform web` OK (новый бандл), Android-бандл содержит `CategoryModal`+`flattenLeaves`.
 - **Коммит main:** `0cde6d1`. **Deploy gh-pages:** `3877dc4` (новый бандл `AppEntry-76576a0c…`).
 
+## Завершено: UI/UX круглый стол — тёплый редизайн «calm medical» (web-research + Kiro)
+- **Исследование:** 3 параллельных web-research-агента (IA/навигация, визуальный стиль, микро-UX) + реальный Kiro-разбор кода (15 замечаний с `file:line`). Вердикт представлен, пользователь выбрал «Всё сразу: арт + навигация + качество».
+- **Арт/палитра (`src/theme/palettes.js`):** тёплая «calm medical» — лён/мох/янтарь. Light: bg `#F6F5F0`, accent `#2B7D63`, secondary янтарь `#C4894D`; Dark: bg `#1A1B18`, accent `#4DBD92`, secondary `#D9A05A`. Новые токены `textTertiary`, `accentSoft`/`secondarySoft`/`Dark`, внимательные текстовые тона. Контраст AA сохранён.
+- **Типографика/геометрия (`src/theme/index.js`):** body 15→16, hero 30→34, label/overline-скейл, space.xxxl (36), radius sm 12 (кнопки) / md 16 (карточки) / lg 20 (шторка), `shadow.sheet`.
+- **Навигация (App.js):** 6 вкладок → 4 видимых (Прогноз/История/Календарь/Профиль) + скрытые «Лог»/«Настройки» (`tabBarButton: () => null`); центральный ФАБ «+» со speed-dial (поиск еды / своё фото / дефекация — `navigate('Лог', { initialMode })`); Настройки вложены в Профиль (строка со стрелкой, кнопка «Назад»); `BottomTabBar` подтверждён как экспорт `@react-navigation/bottom-tabs`.
+- **PredictScreen:** hero-карточка с `LinearGradient` (accentDark→accent), чип «через ~N», мини-бар окна достоверности (контекст ±2×confidenceH, маркер на 50%), «Метод: …», one-tap быстрый лог дефекации («Отметить сейчас» → «Записано», 1.6 c, `useQuickDefecation`), empty-state, факторы без hairline, кнопка будильника без эмодзи.
+- **Качество/доступность (Kiro-разбор):** контраст подсказок (textSecondary/vs/Muted, photoHint lineHeight 18), deleteBtn 44→48 (+hitSlop 6) в History, FilterChip-строка «Все/Приёмы пищи/Дефекации», лоадер «Ищем блюда…» в LogScreen, легенда календаря на токенах (убран `#27ae60`/`#f39c12`), indeterminate «Выбрать все» + `mixed` aria + «Готово (N)» в CategoryModal, swipeHint→textSecondary, Settings «Применить к прогнозу», accent-поиск через `arrowRight`.
+- **ProgressionCard:** тон «наблюдение» вместо гонки — badge янтарём, иконка `history`, «Дней наблюдений», a11y «отслеживаете N дней».
+- **Проверки:** `npm test` 38/38, Babel 13/13, `expo export --platform web` OK (бандл 1.53 MB, кириллица в бандле unicode-escaped — проверено декодированием), live index 200 + бандл 200.
+- **Коммиты:** main `7c553b3`, gh-pages `54f5dee` (бандл `AppEntry-bf6efa65…`).
+
 ## Relevant Files
 - `src/theme/index.js`, `src/theme/palettes.js` (новый), `src/theme/theme-context.js` (новый)
 - `src/ui/` — все компоненты переведены на `useThemeColors()` (Card, Button, Chip, Icon, ScreenHeader, Section, TextField)
