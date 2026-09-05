@@ -202,6 +202,26 @@ const PATHS = {
       <Path d="M8 11V8a4 4 0 0 1 8 0v3" />
     </>
   ),
+  // Тренд вниз (интервал сокращается)
+  trendDown: (
+    <>
+      <Path d="M4 7l6.5 6.5 3.5-3.5 6 6" />
+      <Path d="M20 13v3h-3" />
+    </>
+  ),
+  // Тренд вверх (интервал растёт)
+  trendUp: (
+    <>
+      <Path d="M4 17l6.5-6.5 3.5 3.5 6-6" />
+      <Path d="M20 11V8h-3" />
+    </>
+  ),
+  // Стабильно (ровная линия)
+  equals: (
+    <>
+      <Path d="M5 9h14M5 15h14" />
+    </>
+  ),
 };
 
 export default function Icon({ name, size = 22, color, strokeWidth = 'regular', children }) {

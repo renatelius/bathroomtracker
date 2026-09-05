@@ -4,7 +4,7 @@ import { SafeAreaView } from 'react-native-safe-area-context';
 import { useFocusEffect } from '@react-navigation/native';
 import { computeStats } from '../model/progression.mjs';
 import { getDefecations } from '../store/storage';
-import { ScreenHeader, Card, Section, Icon, FadeIn, EmptyState } from '../ui';
+import { ScreenHeader, Card, Section, Icon, FadeIn, EmptyState, Sparkline } from '../ui';
 import { useThemeColors, type, space, radius, shadow } from '../theme';
 
 const DAY = 24 * 3600e3;
@@ -106,6 +106,39 @@ export default function StatisticsScreen() {
       ? comfortList.reduce((s, c) => s + c, 0) / comfortList.length
       : null;
     return { counts, rated, max, avgComfort };
+  }, [defecations]);
+
+  const trend = useMemo(() => {
+    const list = defecations.slice().sort((a, b) => a.timeMs - b.timeMs);
+    const intervals = [];
+    for (let i = 1; i < list.length; i++) {
+      const h = (list[i].timeMs - list[i - 1].timeMs) / 3600e3;
+      if (h > 0 && h <= 72) intervals.push(h); // отсекаем пропуски > 3 суток
+    }
+    if (intervals.length < 3) return { intervals, avg: null, label: '—', arrow: 'flat' };
+
+    const fmtH = (h) => (h < 24 ? `${Math.round(h)} ч` : `${(h / 24).toFixed(1)} дн.`);
+    let avg = intervals.reduce((s, v) => s + v, 0) / intervals.length;
+
+    // Тренд: среднее вторых 50% интервалов против первых 50%
+    const half = Math.max(1, Math.floor(intervals.length / 2));
+    const first = intervals.slice(0, half);
+    const second = intervals.slice(-half);
+    const a1 = first.reduce((s, v) => s + v, 0) / first.length;
+    const a2 = second.reduce((s, v) => s + v, 0) / second.length;
+    const delta = a1 > 0 ? ((a2 - a1) / a1) * 100 : 0;
+
+    let arrow = 'flat';
+    let label = 'стабильно';
+    if (delta <= -5) {
+      arrow = 'down';
+      label = `короче на ${Math.abs(Math.round(delta))}%`;
+    } else if (delta >= 5) {
+      arrow = 'up';
+      label = `длиннее на ${Math.round(delta)}%`;
+    }
+    avg = Math.round(avg);
+    return { intervals, avg: fmtH(avg), label, arrow };
   }, [defecations]);
 
   const avgText = stats.totalCount
@@ -222,6 +255,40 @@ export default function StatisticsScreen() {
                   <Text style={[styles.barCount, { color: palette.textSecondary }]}>{weekdayCounts[i].count}</Text>
                 </View>
               ))}
+            </View>
+          )}
+        </Card>
+
+        <Section
+          title="Тренд интервалов"
+          right={
+            trend.intervals.length > 0 ? (
+              <Text style={{ fontSize: 13, fontWeight: '500', color: palette.textSecondary }}>
+                {trend.avg} ч в среднем
+              </Text>
+            ) : null
+          }
+        />
+        <Card tone="default">
+          {trend.intervals.length < 3 ? (
+            <View style={styles.emptyRow}>
+              <Icon name="chart" size={22} color={palette.accent} />
+              <Text style={[styles.emptyText, { color: palette.textSecondary }]}>
+                Отметьте ещё пару визитов — здесь появится линия вашего ритма.
+              </Text>
+            </View>
+          ) : (
+            <View>
+              <Sparkline data={trend.intervals} height={72} />
+              <View style={styles.trendMeta}>
+                <Text style={[styles.trendLabel, { color: palette.textSecondary }]}>
+                  {trend.intervals.length} интервалов
+                </Text>
+                <View style={[styles.trendChip, { backgroundColor: palette.surfaceAlt }]}>
+                  <Icon name={trend.arrow === 'down' ? 'trendDown' : trend.arrow === 'up' ? 'trendUp' : 'equals'} size={13} color={palette.textPrimary} />
+                  <Text style={[styles.trendChipText, { color: palette.textPrimary }]}>{trend.label}</Text>
+                </View>
+              </View>
             </View>
           )}
         </Card>
@@ -349,6 +416,23 @@ const styles = StyleSheet.create({
     marginLeft: 6,
   },
   legendText: { fontSize: type.caption, marginLeft: 6 },
+
+  trendMeta: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    marginTop: space.sm,
+  },
+  trendLabel: { fontSize: type.caption, fontWeight: '500' },
+  trendChip: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 5,
+    paddingHorizontal: 10,
+    paddingVertical: 5,
+    borderRadius: radius.pill,
+  },
+  trendChipText: { fontSize: type.caption, fontWeight: '600' },
 
   barRow: {
     flexDirection: 'row',
