@@ -148,6 +148,13 @@ const PATHS = {
       <Path d="M12 16.5c1.3-.5 2.2-1.7 2.2-3.1 0-1.9-1.5-3-2.2-4.6" />
     </>
   ),
+  // Копировать (буфер обмена)
+  copy: (
+    <>
+      <Rect x="9" y="9" width="11" height="11" rx="2" />
+      <Path d="M5 15H4.5A1.5 1.5 0 0 1 3 13.5v-9A1.5 1.5 0 0 1 4.5 3h9A1.5 1.5 0 0 1 15 4.5V5" />
+    </>
+  ),
 };
 
 export default function Icon({ name, size = 22, color, strokeWidth = 'regular', children }) {

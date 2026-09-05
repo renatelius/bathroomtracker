@@ -2,7 +2,7 @@ import React, { useEffect, useState, useCallback, useRef } from 'react';
 import { NavigationContainer, createNavigationContainerRef } from '@react-navigation/native';
 import { createBottomTabNavigator, BottomTabBar } from '@react-navigation/bottom-tabs';
 import { SafeAreaProvider, useSafeAreaInsets } from 'react-native-safe-area-context';
-import { ActivityIndicator, View, Platform, Text, TouchableOpacity, Pressable, Modal, StyleSheet } from 'react-native';
+import { ActivityIndicator, View, Platform, Text, TouchableOpacity, Pressable, Modal, StyleSheet, Linking } from 'react-native';
 import { StatusBar } from 'expo-status-bar';
 
 import { getProfile } from './src/store/storage';
@@ -24,6 +24,93 @@ const Tab = createBottomTabNavigator();
 const navigationRef = createNavigationContainerRef();
 
 const TAB_BAR_HEIGHT = Platform.OS === 'android' ? 56 : 49;
+
+/**
+ * Деп-линки. Маршруты:
+ *  - web:  https://…/bathroomtracker/#/log  |  #/settings  |  #/prediction  и т.д.
+ *  - native:  bathroomtracker://log  |  bathroomtracker://settings  и т.д.
+ * Хэш-стратегия для web нужна, т.к. статический хостинг (GitHub Pages)
+ * не переписывает пути, поэтому внешние ссылки ведут на корень.
+ */
+const DEEP_SCREENS = {
+  '': null,
+  main: null,
+  home: null,
+  прогноз: 'Прогноз',
+  prediction: 'Прогноз',
+  predict: 'Прогноз',
+  история: 'История',
+  history: 'История',
+  календарь: 'Календарь',
+  calendar: 'Календарь',
+  лог: 'Лог',
+  log: 'Лог',
+  add: 'Лог',
+  new: 'Лог',
+  профиль: 'Профиль',
+  profile: 'Профиль',
+  настройки: 'Настройки',
+  settings: 'Настройки',
+};
+
+function parseDeepUrl(rawUrl) {
+  const candidates = [];
+  if (typeof rawUrl === 'string') candidates.push(rawUrl);
+  if (Platform.OS === 'web' && typeof window !== 'undefined') candidates.push(window.location.href);
+  for (const raw of candidates) {
+    let path = '';
+    try {
+      const u = new URL(raw);
+      if (u.protocol === 'http:' || u.protocol === 'https:') {
+        if (u.hash) path = u.hash.replace(/^#\/?/, '');
+        else path = u.pathname.replace(/^\/+/, '');
+      } else {
+        path = raw.replace(/^[a-zA-Z][a-zA-Z0-9+.-]*:\/\//, '');
+      }
+    } catch {
+      path = raw;
+    }
+    path = path
+      .replace(/^[a-zA-Z][a-zA-Z0-9+.-]*:\/\//, '')
+      .replace(/\?.*$/, '')
+      .replace(/^bathroomtracker\//, '')
+      .replace(/^\/+|\/+$/g, '');
+    const first = path.split('/')[0].toLowerCase();
+    if (DEEP_SCREENS[first] != null) return DEEP_SCREENS[first];
+  }
+  return null;
+}
+
+/** Дожидается готовности навигатора и переходит на экран по деп-линку. */
+async function navigateWhenReady(screen) {
+  for (let i = 0; i < 100; i++) {
+    if (navigationRef.isReady()) {
+      navigationRef.navigate(screen);
+      return;
+    }
+    await new Promise((r) => setTimeout(r, 100));
+  }
+}
+
+function useDeepLinks() {
+  useEffect(() => {
+    const onUrl = (event) => {
+      const screen = parseDeepUrl(event && event.url);
+      if (screen) navigateWhenReady(screen);
+    };
+    Linking.getInitialURL().then(onUrl).catch(() => {});
+    const sub = Linking.addEventListener('url', onUrl);
+    if (Platform.OS === 'web' && typeof window !== 'undefined') {
+      const onHash = () => onUrl({ url: window.location.href });
+      window.addEventListener('hashchange', onHash);
+      return () => {
+        window.removeEventListener('hashchange', onHash);
+        if (sub && sub.remove) sub.remove();
+      };
+    }
+    return () => { if (sub && sub.remove) sub.remove(); };
+  }, []);
+}
 
 function TabBarIcon({ name, color, size }) {
   return <Icon name={name} size={size || 22} color={color} strokeWidth="regular" />;
@@ -148,6 +235,7 @@ function HomeTabBar(props) {
 function MainNavigator() {
   const { t } = useI18n();
   const palette = useThemeColors();
+  useDeepLinks();
 
   useEffect(() => {
     // Переход на «Лог» по нажатию на напоминание (native).

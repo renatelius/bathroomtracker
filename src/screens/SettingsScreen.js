@@ -2,6 +2,7 @@ import React, { useState, useCallback } from 'react';
 import { View, ScrollView, Text, Switch, StyleSheet, Alert, Platform, TouchableOpacity } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { useFocusEffect, useNavigation } from '@react-navigation/native';
+import * as Clipboard from 'expo-clipboard';
 import { getSettings, saveSettings, getProfile, getDefecations, getMeals, exportData, importData } from '../store/storage';
 import { predict } from '../model/model.mjs';
 import { applyReminder, cancelAlarm, calendarPermission } from '../services/alarmService';
@@ -115,6 +116,40 @@ export default function SettingsScreen() {
     }
   }
 
+  function onExportPressed() {
+    Alert.alert(
+      'Экспорт данных?',
+      'Файл содержит личные данные о здоровье (профиль, история, приёмы пищи). Он сохраняется локально на вашем устройстве.',
+      [
+        { text: 'Отмена', style: 'cancel' },
+        { text: 'Экспортировать', onPress: onExport },
+      ]
+    );
+  }
+
+  async function copyToClipboard(text) {
+    try {
+      await Clipboard.setStringAsync(text);
+      Alert.alert('Скопировано', 'Данные JSON скопированы в буфер обмена.');
+      return;
+    } catch (e) {
+      // Фолбэк для web на http (dev) или устаревших браузеров.
+      let ok = false;
+      try {
+        const ta = document.createElement('textarea');
+        ta.value = text;
+        document.body.appendChild(ta);
+        ta.select();
+        ok = document.execCommand('copy');
+        document.body.removeChild(ta);
+      } catch (_) { /* ignore */ }
+      Alert.alert(
+        ok ? 'Скопировано' : 'Не удалось скопировать',
+        ok ? 'Данные JSON в буфере обмена.' : 'Выделите текст вручную и скопируйте его.'
+      );
+    }
+  }
+
   async function onImport() {
     const raw = (importText || '').trim();
     if (!raw) {
@@ -126,7 +161,7 @@ export default function SettingsScreen() {
       const parsed = JSON.parse(raw);
       Alert.alert(
         'Импортировать данные?',
-        'Записи дефекаций и приёмы пищи будут добавлены к текущим (без дублей). Профиль и настройки обновятся.',
+        'Записи дефекаций и приёмы пищи будут добавлены к текущим (без дублей). Профиль и настройки обновятся. Обработка локальная — данные не отправляются.',
         [
           { text: 'Отмена', style: 'cancel' },
           {
@@ -258,20 +293,29 @@ export default function SettingsScreen() {
           </Text>
           <Button
             title="Экспорт в JSON"
-            icon="plus"
+            icon="copy"
             variant="secondary"
-            onPress={onExport}
+            onPress={onExportPressed}
             style={styles.spacer}
           />
           {exportedText ? (
-            <TextField
-              label="Ваши данные (скопируйте или сохраните файл)"
-              multiline
-              value={exportedText}
-              onChangeText={setExportedText}
-              inputStyle={styles.mono}
-              style={{ marginTop: space.md }}
-            />
+            <>
+              <TextField
+                label="Ваши данные (скопируйте или сохраните файл)"
+                multiline
+                value={exportedText}
+                onChangeText={setExportedText}
+                inputStyle={styles.mono}
+                style={{ marginTop: space.md }}
+              />
+              <Button
+                title="Скопировать в буфер"
+                icon="copy"
+                variant="secondary"
+                onPress={() => copyToClipboard(exportedText)}
+                style={styles.spacer}
+              />
+            </>
           ) : null}
 
           <TextField
@@ -290,6 +334,18 @@ export default function SettingsScreen() {
             onPress={onImport}
             style={styles.spacer}
           />
+        </Card>
+
+        <Card>
+          <Section title="Приватность" />
+          <Text style={[styles.rowDesc, { color: palette.textSecondary }]}>
+            Все данные (профиль, история, приёмы пищи, настройки) хранятся только на этом устройстве.
+            Приложение не собирает телеметрию и не требует учётную запись.
+          </Text>
+          <Text style={[styles.rowDesc, { color: palette.textSecondary, marginTop: space.sm }]}>
+            Демо-оценка по фото выполняется локально — снимки никуда не передаются.
+            Резервные копии содержат личные данные, храните их в безопасном месте.
+          </Text>
         </Card>
       </ScrollView>
     </SafeAreaView>

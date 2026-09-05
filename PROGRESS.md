@@ -151,6 +151,12 @@
 - **Проверки:** `npm test` 38/38, Babel 13/13, `expo export --platform web` OK (бандл 1.53 MB, кириллица в бандле unicode-escaped — проверено декодированием), live index 200 + бандл 200.
 - **Коммиты:** main `7c553b3`, gh-pages `54f5dee` (бандл `AppEntry-bf6efa65…`).
 
+## Завершено: Остатки Kiro — копирование JSON, деп-линки, приватность
+- **Копирование JSON в буфер (Kiro #8):** `npx expo install expo-clipboard` (~8.0.8); в SettingsScreen после экспорта — кнопка «Скопировать в буфер» (иконка `copy` добавлена в `src/ui/Icon.js`); `Clipboard.setStringAsync` + веб-фолбэк `navigator.clipboard`/`execCommand` (кнопка ставится вручную) с честными Alert. Кнопка экспорта — `icon="copy"`.
+- **Деп-линки:** `"scheme": "bathroomtracker"` в app.json; хук `useDeepLinks` в App.js — web `https://…/bathroomtracker/#/log|settings|history|calendar|profile|prediction` (+`hashchange`), native `bathroomtracker://log|…` (+`Linking.addEventListener('url')`); регистронезависимый `parseDeepUrl`, ожидание готовности навигатора (`navigateWhenReady`, 10 c), хэш-стратегия выбрана из-за статического хостинга. Реализация проверена изолированно: 12/12 кейсов (Cyrillic scheme, query, пустой путь).
+- **Приватность:** карточка «Приватность» в Настройках (хранение только на устройстве, без телеметрии, фото обрабатываются локально), подтверждение перед экспортом («Экспорт данных? — файл содержит личные данные о здоровье»), формулировка импорта дополнена «Обработка локальная — данные не отправляются».
+- **Проверки:** Babel 3/3, `npm test` 38/38, деп-линк-тесты 12/12, `expo export --platform web` OK (бандл 1.542 MB; маркеры: «Скопировать в буфер», «Приватность», `setStringAsync`, `hashchange` — подтверждены декодированием).
+
 ## Relevant Files
 - `src/theme/index.js`, `src/theme/palettes.js` (новый), `src/theme/theme-context.js` (новый)
 - `src/ui/` — все компоненты переведены на `useThemeColors()` (Card, Button, Chip, Icon, ScreenHeader, Section, TextField)
