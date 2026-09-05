@@ -29,7 +29,7 @@ export default function CategoryModal({
   const insets = useSafeAreaInsets();
 
   const allSelected = categories.length > 0 && selected.length === categories.length;
-  const someSelected = selected.length > 0;
+  const someSelected = selected.length > 0 && !allSelected;
 
   function toggle(id) {
     const has = selected.includes(id);
@@ -72,19 +72,18 @@ export default function CategoryModal({
             style={styles.selectAllRow}
             onPress={toggleAll}
             accessibilityRole="checkbox"
-            accessibilityState={{ checked: allSelected }}
-            accessibilityLabel={allSelected ? 'Убрать выбор всех категорий' : 'Выбрать все категории'}
+            accessibilityState={{ checked: allSelected, mixed: someSelected }}
+            accessibilityLabel={allSelected ? 'Снять выбор всех категорий' : 'Выбрать все категории'}
           >
-            <View style={[styles.checkbox, { borderColor: palette.accent }, allSelected && { backgroundColor: palette.accent }]}>
+            <View style={[styles.checkbox, { borderColor: palette.accent }, (allSelected || someSelected) && { backgroundColor: palette.accent }]}>
               {allSelected ? <Icon name="check" size={14} color={palette.textOnAccent} /> : null}
+              {someSelected ? <View style={styles.indeterminate} /> : null}
             </View>
             <Text style={[styles.selectAllText, { color: palette.textPrimary }]}>
               {allSelected ? 'Снять выбор' : 'Выбрать все'}
             </Text>
             {someSelected ? (
-              <Text style={[styles.meta, { color: palette.textMuted }]}>
-                {allSelected ? 'всё выбрано' : 'выбрано частично'}
-              </Text>
+              <Text style={[styles.meta, { color: palette.textMuted }]}>выбрано частично</Text>
             ) : null}
           </TouchableOpacity>
 
@@ -127,10 +126,10 @@ export default function CategoryModal({
             onPress={onApply}
             activeOpacity={0.85}
             accessibilityRole="button"
-            accessibilityLabel="Применить"
+            accessibilityLabel="Применить выбранные категории"
           >
             <Text style={[styles.applyText, { color: palette.textOnAccent }]}>
-              Применить{selected.length ? ` (${selected.length})` : ''}
+              Готово{selected.length ? ` (${selected.length})` : ''}
             </Text>
           </TouchableOpacity>
         </View>
@@ -149,7 +148,7 @@ const styles = StyleSheet.create({
   },
   handle: {
     alignSelf: 'center',
-    width: 40,
+    width: 32,
     height: 4,
     borderRadius: radius.pill,
     marginBottom: space.lg,
@@ -187,6 +186,12 @@ const styles = StyleSheet.create({
     borderWidth: 2,
     alignItems: 'center',
     justifyContent: 'center',
+  },
+  indeterminate: {
+    width: 10,
+    height: 2,
+    borderRadius: 1,
+    backgroundColor: '#FFFFFF',
   },
   selectAllText: { marginLeft: space.sm, fontSize: type.body, fontWeight: type.semibold, flexShrink: 1 },
   meta: { marginLeft: 'auto', fontSize: type.caption },

@@ -86,12 +86,12 @@ export default function Button({
 }
 
 const styles = StyleSheet.create({
-  wrap: { borderRadius: radius.md },
+  wrap: { borderRadius: radius.sm },
   btn: {
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'center',
-    borderRadius: radius.md,
+    borderRadius: radius.sm,
     paddingVertical: 15,
     paddingHorizontal: 18,
   },

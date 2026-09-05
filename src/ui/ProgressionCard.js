@@ -18,7 +18,7 @@ export default function ProgressionCard({ stats, milestones, style }) {
   const nextMilestone = milestones.find((m) => !m.done);
   const doneCount = milestones.filter((m) => m.done).length;
 
-  const a11yLabel = `Прогресс: серия ${stats.currentStreak} дней подряд, рекорд ${stats.bestStreak} дней. ` +
+  const a11yLabel = `Прогресс: отслеживаете ${stats.currentStreak} дней, рекорд ${stats.bestStreak} дней. ` +
     `Всего записей ${stats.totalCount}. ` +
     (stats.hasHistory ? `Регулярность ведения ${stats.consistencyPct} процентов. ` : '') +
     `Достижения: ${doneCount} из ${milestones.length}.`;
@@ -26,15 +26,15 @@ export default function ProgressionCard({ stats, milestones, style }) {
   return (
     <Card style={style} accessible accessibilityLabel={a11yLabel}>
       <View style={styles.topRow}>
-        <View style={[styles.streakBadge, { backgroundColor: palette.accentSoft }]}>
-          <Icon name="flame" size={20} color={palette.accent} strokeWidth="regular" />
-          <Text style={[styles.streakNum, { color: palette.accent }]}>{stats.currentStreak}</Text>
+        <View style={[styles.streakBadge, { backgroundColor: palette.secondarySoft }]}>
+          <Icon name="history" size={20} color={palette.secondary} strokeWidth="regular" />
+          <Text style={[styles.streakNum, { color: palette.secondary }]}>{stats.currentStreak}</Text>
         </View>
         <View style={{ flex: 1, marginLeft: space.md }}>
           <Text style={[styles.streakLabel, { color: palette.textPrimary }]}>
-            {stats.currentStreak === 0 ? 'Начните серию' : 'Дней подряд'}
+            {stats.currentStreak === 0 ? 'Начните наблюдение' : 'Дней наблюдений'}
           </Text>
-          <Text style={[styles.streakSub, { color: palette.textMuted }]}>
+          <Text style={[styles.streakSub, { color: palette.textSecondary }]}>
             {stats.totalCount > 0
               ? `рекорд: ${stats.bestStreak} · записей: ${stats.totalCount}`
               : 'Записывайте дефекации, чтобы видеть прогресс'}
@@ -90,7 +90,7 @@ export default function ProgressionCard({ stats, milestones, style }) {
             ))}
           </View>
           {nextMilestone && (
-            <Text style={[styles.nextHint, { color: palette.textMuted }]}>
+            <Text style={[styles.nextHint, { color: palette.textSecondary }]}>
               Следующее: «{nextMilestone.label}»
             </Text>
           )}

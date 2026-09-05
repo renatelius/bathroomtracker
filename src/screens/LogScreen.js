@@ -13,6 +13,7 @@ import {
   PanResponder,
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
+import { useRoute } from '@react-navigation/native';
 import { searchFoods, kcalForServing } from '../services/foodApi';
 import { addMeal, addDefecation } from '../store/storage';
 import { evaluateMealByPhoto } from '../services/vision';
@@ -24,12 +25,19 @@ const DEFAULT_GRAMS = 200;
 
 export default function LogScreen() {
   const palette = useThemeColors();
+  const route = useRoute();
   const [mode, setMode] = useState('search'); // 'search' | 'photo'
   const [query, setQuery] = useState('');
   const [results, setResults] = useState([]);
   const [searching, setSearching] = useState(false);
   const [selected, setSelected] = useState(null);
   const [grams, setGrams] = useState(String(DEFAULT_GRAMS));
+
+  // Центральный FAB может открыть Лог сразу в нужном под-режиме.
+  useEffect(() => {
+    const initial = route?.params?.initialMode;
+    if (initial === 'photo' || initial === 'search') setMode(initial);
+  }, [route?.params?.initialMode]);
 
   // фото-режим
   const [photoUri, setPhotoUri] = useState(null);
@@ -175,7 +183,7 @@ export default function LogScreen() {
             accessibilityState={{ selected: mode === 'search' }}
             accessibilityLabel="Режим поиска"
           >
-            <Icon name="list" size={16} color={mode === 'search' ? palette.accent : palette.textMuted} />
+            <Icon name="list" size={17} color={mode === 'search' ? palette.accent : palette.textMuted} />
             <Text style={[styles.modeTabText, { color: mode === 'search' ? palette.accent : palette.textMuted }]}>Поиск</Text>
           </TouchableOpacity>
           <TouchableOpacity
@@ -185,11 +193,11 @@ export default function LogScreen() {
             accessibilityState={{ selected: mode === 'photo' }}
             accessibilityLabel="Режим своего фото"
           >
-            <Icon name="photo" size={16} color={mode === 'photo' ? palette.accent : palette.textMuted} />
+            <Icon name="photo" size={17} color={mode === 'photo' ? palette.accent : palette.textMuted} />
             <Text style={[styles.modeTabText, { color: mode === 'photo' ? palette.accent : palette.textMuted }]}>Своё фото</Text>
           </TouchableOpacity>
         </View>
-        <Text style={[styles.swipeHint, { color: palette.textMuted }]}>Свайп влево/вправо — переключение режимов</Text>
+        <Text style={[styles.swipeHint, { color: palette.textSecondary }]}>Свайп влево/вправо — переключение режимов</Text>
 
         <Animated.View
           style={[styles.modeWrap, { transform: [{ translateX: panX }] }]}
@@ -213,11 +221,19 @@ export default function LogScreen() {
               </TouchableOpacity>
             </View>
 
-            <FlatList
-              data={results}
-              keyExtractor={(item) => item.id}
-              scrollEnabled={false}
-              renderItem={({ item }) => {
+<FlatList
+                data={results}
+                keyExtractor={(item) => item.id}
+                scrollEnabled={false}
+                ListHeaderComponent={
+                  searching ? (
+                    <View style={styles.searchLoading}>
+                      <ActivityIndicator color={palette.accent} />
+                      <Text style={[styles.searchLoadingText, { color: palette.textSecondary }]}>Ищем блюда…</Text>
+                    </View>
+                  ) : null
+                }
+                renderItem={({ item }) => {
                 const active = selected && selected.id === item.id;
                 return (
                   <TouchableOpacity
@@ -283,7 +299,7 @@ export default function LogScreen() {
             {photoUri ? (
               <>
                 <Button
-                  title={estimating ? 'Оцениваем…' : '✨ Оценить калории по фото'}
+                  title={estimating ? 'Оцениваем…' : 'Оценить калории по фото'}
                   icon="energy"
                   loading={estimating}
                   onPress={onEstimate}
@@ -338,6 +354,8 @@ const styles = StyleSheet.create({
 
   searchRow: { flexDirection: 'row', alignItems: 'flex-start', gap: 10, marginBottom: 8 },
   searchInput: {},
+  searchLoading: { alignItems: 'center', paddingVertical: 16 },
+  searchLoadingText: { marginTop: 8, fontSize: type.label },
   searchBtn: { borderRadius: 12, paddingHorizontal: 18, paddingVertical: 14, alignItems: 'center', justifyContent: 'center' },
   searchBtnText: { color: '#fff', fontWeight: '600' },
 
@@ -368,7 +386,7 @@ const styles = StyleSheet.create({
   photoPreview: { width: '100%', height: 180, resizeMode: 'cover' },
   photoEmpty: { height: 150, alignItems: 'center', justifyContent: 'center' },
   photoEmptyText: { marginTop: 8, fontSize: type.body },
-  photoHint: { fontSize: type.caption, textAlign: 'center', marginTop: 8, lineHeight: 16 },
+  photoHint: { fontSize: type.caption, textAlign: 'center', marginTop: 8, lineHeight: 18 },
 
   spacer: { marginTop: space.md },
 });

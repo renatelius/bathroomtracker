@@ -9,7 +9,7 @@ import {
   Image,
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
-import { useFocusEffect } from '@react-navigation/native';
+import { useFocusEffect, useNavigation } from '@react-navigation/native';
 import * as ImagePicker from 'expo-image-picker';
 import { getProfile, saveProfile, saveLang, clearAll } from '../store/storage';
 import { useI18n } from '../i18n';
@@ -26,6 +26,7 @@ const SEX_LABELS = { male: 'Мужской', female: 'Женский' };
 
 export default function ProfileScreen() {
   const palette = useThemeColors();
+  const navigation = useNavigation();
   const { t, lang, setLang } = useI18n();
   const [profile, setProfile] = useState(null);
   const [avatar, setAvatar] = useState(null);
@@ -112,8 +113,17 @@ export default function ProfileScreen() {
             </View>
           </TouchableOpacity>
           <View style={[styles.divider, { backgroundColor: palette.divider }]} />
-          {rows.map((r) => (
-            <View key={r.title} style={styles.row}>
+          {rows.map((r, i) => (
+            <View
+              key={r.title}
+              style={[
+                styles.row,
+                i > 0 && {
+                  borderTopWidth: StyleSheet.hairlineWidth,
+                  borderTopColor: palette.divider,
+                },
+              ]}
+            >
               <View style={[styles.iconWrap, { backgroundColor: palette.accentSoft }]}>
                 <Icon name={r.icon} size={18} color={palette.accent} />
               </View>
@@ -121,6 +131,27 @@ export default function ProfileScreen() {
               <Text style={[styles.rowValue, { color: palette.textSecondary }]}>{r.value}</Text>
             </View>
           ))}
+        </Card>
+
+        <Card>
+          <TouchableOpacity
+            style={styles.settingsRow}
+            onPress={() => navigation.navigate('Настройки')}
+            activeOpacity={0.7}
+            accessibilityRole="button"
+            accessibilityLabel="Настройки: напоминания, календарь, данные"
+          >
+            <View style={[styles.iconWrap, { backgroundColor: palette.accentSoft }]}>
+              <Icon name="settings" size={20} color={palette.accent} />
+            </View>
+            <View style={{ flex: 1 }}>
+              <Text style={[styles.rowTitle, { color: palette.textPrimary }]}>Настройки</Text>
+              <Text style={[styles.settingsHint, { color: palette.textSecondary }]}>
+                Напоминания, календарь, данные
+              </Text>
+            </View>
+            <Icon name="arrowRight" size={18} color={palette.textMuted} />
+          </TouchableOpacity>
         </Card>
 
         <Card>
@@ -154,6 +185,8 @@ const styles = StyleSheet.create({
   avatarTitle: { fontSize: 18, fontWeight: type.semibold },
   avatarHint: { fontSize: type.caption, marginTop: 4 },
   row: { flexDirection: 'row', alignItems: 'center', paddingVertical: 12 },
+  settingsRow: { flexDirection: 'row', alignItems: 'center', minHeight: 56 },
+  settingsHint: { fontSize: type.caption, marginTop: 2 },
   iconWrap: { width: 38, height: 38, borderRadius: 12, alignItems: 'center', justifyContent: 'center' },
   rowTitle: { fontSize: 15, flex: 1, paddingLeft: space.md },
   rowValue: { fontSize: 15, fontWeight: type.medium },

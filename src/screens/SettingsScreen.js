@@ -1,7 +1,7 @@
 import React, { useState, useCallback } from 'react';
-import { View, ScrollView, Text, Switch, StyleSheet, Alert, Platform } from 'react-native';
+import { View, ScrollView, Text, Switch, StyleSheet, Alert, Platform, TouchableOpacity } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
-import { useFocusEffect } from '@react-navigation/native';
+import { useFocusEffect, useNavigation } from '@react-navigation/native';
 import { getSettings, saveSettings, getProfile, getDefecations, getMeals, exportData, importData } from '../store/storage';
 import { predict } from '../model/model.mjs';
 import { applyReminder, cancelAlarm, calendarPermission } from '../services/alarmService';
@@ -12,6 +12,7 @@ const LEAD_OPTIONS = [0, 5, 10, 15, 30, 60];
 
 export default function SettingsScreen() {
   const palette = useThemeColors();
+  const navigation = useNavigation();
   const [settings, setSettings] = useState(null);
   const [busy, setBusy] = useState(false);
   const [exportedText, setExportedText] = useState('');
@@ -162,6 +163,17 @@ export default function SettingsScreen() {
   return (
     <SafeAreaView style={[styles.flex, { backgroundColor: palette.bg }]}>
       <ScrollView contentContainerStyle={styles.container}>
+        <View style={styles.navRow}>
+          <TouchableOpacity
+            style={[styles.backBtn, { backgroundColor: palette.surfaceAlt }]}
+            onPress={() => navigation.goBack()}
+            hitSlop={12}
+            accessibilityRole="button"
+            accessibilityLabel="Назад в профиль"
+          >
+            <Icon name="arrowLeft" size={20} color={palette.accent} />
+          </TouchableOpacity>
+        </View>
         <ScreenHeader title="Настройки" subtitle="Напоминания и календарь" icon="settings" />
 
         <Card>
@@ -207,8 +219,8 @@ export default function SettingsScreen() {
         </Card>
 
         <Button
-          title="Применить сейчас"
-          icon="plus"
+          title="Применить к прогнозу"
+          icon="alarm"
           loading={busy}
           onPress={async () => {
             setBusy(true);
@@ -304,6 +316,8 @@ const styles = StyleSheet.create({
   flex: { flex: 1 },
   container: { padding: space.xl, paddingTop: 16 },
   loading: { textAlign: 'center', marginTop: 60 },
+  navRow: { marginBottom: space.md },
+  backBtn: { width: 40, height: 40, borderRadius: 14, alignItems: 'center', justifyContent: 'center' },
   row: { flexDirection: 'row', alignItems: 'center' },
   iconWrap: { width: 44, height: 44, borderRadius: 14, alignItems: 'center', justifyContent: 'center' },
   rowTitle: { fontSize: 16, fontWeight: type.semibold },

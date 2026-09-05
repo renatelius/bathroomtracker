@@ -14,7 +14,7 @@ import { predict } from '../model/model.mjs';
 import { getProfile, getDefecations, getMeals } from '../store/storage';
 import { schedulePrediction, cancelPrediction, ensurePermissions } from '../services/notifications';
 import { getSettings } from '../store/storage';
-import { useThemeColors, type, space } from '../theme';
+import { useThemeColors, type, space, radius } from '../theme';
 import { ScreenHeader, Card, Button, Icon } from '../ui';
 LocaleConfig.locales['ru'] = {
   monthNames: [
@@ -60,19 +60,19 @@ export default function CalendarScreen() {
 
     const marks = {};
 
-    // Дни с дефекациями — синяя точка
+    // Дни с дефекациями — зелёная точка
     defecations.forEach((d) => {
       const k = dayKey(d.timeMs);
       marks[k] = marks[k] || {};
       marks[k].dots = marks[k].dots || [];
-      marks[k].dots.push({ key: 'def', color: '#27ae60' });
+      marks[k].dots.push({ key: 'def', color: palette.success });
     });
-    // Дни с едой — оранжевая точка
+    // Дни с едой — янтарная точка
     meals.forEach((m) => {
       const k = dayKey(m.timeMs);
       marks[k] = marks[k] || {};
       marks[k].dots = marks[k].dots || [];
-      marks[k].dots.push({ key: 'meal', color: '#f39c12' });
+      marks[k].dots.push({ key: 'meal', color: palette.warning });
     });
 
     // Окно достоверности low..high — мягкая подсветка диапазона (кроме прогноза)
@@ -178,17 +178,17 @@ export default function CalendarScreen() {
             textDayFontSize: 14,
             textMonthFontWeight: '700',
             textDayHeaderFontSize: 12,
-            textSectionTitlecolor: palette.textMuted,
+            textSectionTitleColor: palette.textMuted,
           }}
         />
 
         <View style={styles.legend}>
           <View style={styles.legendItem}>
-            <View style={[styles.dot, { backgroundColor: '#27ae60' }]} />
+            <View style={[styles.dot, { backgroundColor: palette.success }]} />
             <Text style={[styles.legendText, { color: palette.textSecondary }]}>Дефекация</Text>
           </View>
           <View style={styles.legendItem}>
-            <View style={[styles.dot, { backgroundColor: '#f39c12' }]} />
+            <View style={[styles.dot, { backgroundColor: palette.warning }]} />
             <Text style={[styles.legendText, { color: palette.textSecondary }]}>Приём пищи</Text>
           </View>
           <View style={styles.legendItem}>
@@ -222,7 +222,8 @@ export default function CalendarScreen() {
               accessibilityLabel="Поставить напоминание о прогнозе"
               accessibilityState={{ disabled: busy }}
             >
-              <Text style={[styles.alarmBtnText, { color: palette.textOnAccent }]}>🔔 Поставить напоминание</Text>
+              <Icon name="alarm" size={18} color={palette.textOnAccent} />
+              <Text style={[styles.alarmBtnText, { color: palette.textOnAccent }]}>Поставить напоминание</Text>
             </TouchableOpacity>
           </View>
         )}
@@ -233,12 +234,12 @@ export default function CalendarScreen() {
 
 const styles = StyleSheet.create({
   flex: { flex: 1 },
-  header: { paddingHorizontal: 20, paddingTop: 16, paddingBottom: 8 },
+  header: { paddingHorizontal: space.xl, paddingTop: 16, paddingBottom: 8 },
   title: { fontSize: 24, fontWeight: '700' },
   legend: {
     flexDirection: 'row',
     flexWrap: 'wrap',
-    paddingHorizontal: 20,
+    paddingHorizontal: space.xl,
     marginTop: 10,
   },
   legendItem: { flexDirection: 'row', alignItems: 'center', marginRight: 16, marginBottom: 8 },
@@ -246,9 +247,9 @@ const styles = StyleSheet.create({
   windowSwatch: { width: 16, height: 10, borderRadius: 3, marginRight: 6 },
   legendText: { fontSize: 12 },
   predictionCard: {
-    borderRadius: 16,
-    padding: 20,
-    margin: 20,
+    borderRadius: radius.md,
+    padding: space.xl,
+    margin: space.xl,
     marginTop: 8,
   },
   cardLabel: { fontSize: 13, marginBottom: 6 },
@@ -256,10 +257,13 @@ const styles = StyleSheet.create({
   cardTime: { fontSize: 26, fontWeight: '800', marginTop: 2 },
   cardRange: { fontSize: 13, marginTop: 4 },
   alarmBtn: {
-    marginTop: 16,
-    borderRadius: 12,
-    padding: 14,
+    flexDirection: 'row',
     alignItems: 'center',
+    justifyContent: 'center',
+    gap: 8,
+    marginTop: 16,
+    borderRadius: radius.sm,
+    padding: 14,
   },
   alarmBtnText: { fontWeight: '600', fontSize: 15 },
 });

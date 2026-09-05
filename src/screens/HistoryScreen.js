@@ -11,7 +11,7 @@ import { SafeAreaView } from 'react-native-safe-area-context';
 import { useFocusEffect } from '@react-navigation/native';
 import { getMeals, getDefecations, removeMeal, removeDefecation } from '../store/storage';
 import { ScreenHeader, Card, Icon, FadeIn, CategoryModal } from '../ui';
-import { useThemeColors, type, space } from '../theme';
+import { useThemeColors, type, space, radius } from '../theme';
 
 const CATEGORIES = [
   { id: 'meal', label: 'Приёмы пищи', icon: 'food' },
@@ -50,6 +50,15 @@ export default function HistoryScreen() {
     else setDefecations(await removeDefecation(item.id));
   }
 
+  function toggleFilter(id) {
+    const has = filter.includes(id);
+    let next = has ? filter.filter((x) => x !== id) : [...filter, id];
+    if (next.length === 0) next = ALL;
+    setFilter(next);
+  }
+
+  const allActive = filter.length >= CATEGORIES.length;
+
   const headerMeta = CATEGORIES.filter((c) => filter.includes(c.id))
     .map((c) => c.label)
     .join(' · ');
@@ -82,7 +91,7 @@ export default function HistoryScreen() {
         </View>
         <TouchableOpacity
           onPress={() => onDelete(item)}
-          hitSlop={14}
+          hitSlop={6}
           style={styles.deleteBtn}
           accessibilityRole="button"
           accessibilityLabel={`Удалить запись ${isMeal ? item.name : 'Дефекация'}`}
@@ -115,9 +124,26 @@ export default function HistoryScreen() {
             </View>
           </TouchableOpacity>
         </View>
-        <Text style={[styles.meta, { color: palette.textMuted }]} numberOfLines={1}>
-          {filter.length === CATEGORIES.length ? 'Все категории' : headerMeta}
+        <Text style={[styles.meta, { color: palette.textSecondary }]} numberOfLines={1}>
+          {allActive ? 'Все категории' : headerMeta}
         </Text>
+        <View style={styles.chipRow}>
+          <FilterChip
+            label="Все"
+            active={allActive}
+            onPress={() => setFilter(ALL)}
+            palette={palette}
+          />
+          {CATEGORIES.map((c) => (
+            <FilterChip
+              key={c.id}
+              label={c.label}
+              active={filter.includes(c.id)}
+              onPress={() => toggleFilter(c.id)}
+              palette={palette}
+            />
+          ))}
+        </View>
       </View>
 
       <FlatList
@@ -126,10 +152,17 @@ export default function HistoryScreen() {
         renderItem={renderItem}
         ListEmptyComponent={
           <View style={styles.emptyBox}>
-            <Icon name="list" size={32} color={palette.textMuted} />
-            <Text style={[styles.empty, { color: palette.textMuted }]}>
+            <View style={[styles.emptyIcon, { backgroundColor: palette.accentSoft }]}>
+              <Icon name="list" size={26} color={palette.accent} />
+            </View>
+            <Text style={[styles.empty, { color: palette.textPrimary }]}>
               {combined.length ? 'В этих категориях пока нет записей' : 'Пока нет записей'}
             </Text>
+            {combined.length === 0 ? (
+              <Text style={[styles.emptySub, { color: palette.textSecondary }]}>
+                Добавьте первую запись — и история начнёт складываться.
+              </Text>
+            ) : null}
           </View>
         }
         contentContainerStyle={styles.list}
@@ -148,10 +181,48 @@ export default function HistoryScreen() {
   );
 }
 
+function FilterChip({ label, active, onPress, palette }) {
+  return (
+    <TouchableOpacity
+      onPress={onPress}
+      activeOpacity={0.8}
+      style={[
+        styles.filterChip,
+        active
+          ? { backgroundColor: palette.accent, borderColor: palette.accent }
+          : { backgroundColor: palette.surface, borderColor: palette.border },
+      ]}
+      accessibilityRole="button"
+      accessibilityState={{ selected: active }}
+      accessibilityLabel={label}
+    >
+      <Text
+        style={[
+          styles.filterChipText,
+          { color: active ? palette.textOnAccent : palette.textPrimary },
+        ]}
+      >
+        {label}
+      </Text>
+    </TouchableOpacity>
+  );
+}
+
 const styles = StyleSheet.create({
   flex: { flex: 1 },
   header: { paddingHorizontal: space.xl, paddingTop: space.lg, paddingBottom: space.sm },
   headerRow: { flexDirection: 'row', alignItems: 'center' },
+  chipRow: { flexDirection: 'row', marginTop: space.sm, gap: 8 },
+  filterChip: {
+    borderRadius: radius.pill,
+    borderWidth: 1,
+    paddingHorizontal: 14,
+    paddingVertical: 8,
+    minHeight: 40,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  filterChipText: { fontSize: type.label, fontWeight: '600' },
   filterBtn: {
     flexDirection: 'row',
     alignItems: 'center',
@@ -181,8 +252,8 @@ const styles = StyleSheet.create({
     borderLeftWidth: 4,
   },
   deleteBtn: {
-    width: 44,
-    height: 44,
+    width: 48,
+    height: 48,
     marginLeft: 8,
     alignItems: 'center',
     justifyContent: 'center',
@@ -193,6 +264,8 @@ const styles = StyleSheet.create({
   thumb: { width: 40, height: 40, borderRadius: 10, marginRight: 10 },
   name: { fontSize: 15, flexShrink: 1 },
   sub: { fontSize: 12, marginTop: 2 },
-  emptyBox: { alignItems: 'center', marginTop: 60 },
-  empty: { fontSize: type.body, marginTop: 12 },
+  emptyBox: { alignItems: 'center', marginTop: 72, paddingHorizontal: space.xl },
+  emptyIcon: { width: 56, height: 56, borderRadius: 18, alignItems: 'center', justifyContent: 'center' },
+  empty: { fontSize: type.body, fontWeight: '600', marginTop: 14, textAlign: 'center' },
+  emptySub: { fontSize: type.label, marginTop: 6, textAlign: 'center', lineHeight: 18 },
 });
