@@ -164,17 +164,17 @@ export default function CalendarScreen() {
     const key = date ? `${date.year}-${String(date.month).padStart(2, '0')}-${String(date.day).padStart(2, '0')}` : null;
     const m = key ? marked[key] : null;
     const dots = (m && m.dots) || [];
+    const cs = (m && m.customStyles && m.customStyles.container) || null;
     const isToday = state === 'today';
     const isSelected = !!(marking && marking.selected);
+    const bg = isSelected ? palette.accent : isToday ? palette.accentSoft : cs ? cs.backgroundColor : undefined;
     return (
       <View
-        style={{
-          alignItems: 'center',
-          justifyContent: 'center',
-          flex: 1,
-          borderRadius: 100,
-          backgroundColor: isSelected ? palette.accent : isToday ? palette.accentSoft : undefined,
-        }}
+        style={[
+          { alignItems: 'center', justifyContent: 'center', flex: 1, borderRadius: 100 },
+          bg ? { backgroundColor: bg } : null,
+          cs && cs.borderWidth ? { borderWidth: cs.borderWidth, borderColor: cs.borderColor } : null,
+        ]}
       >
         <Text
           style={{
