@@ -40,6 +40,7 @@ export default function PredictScreen() {
   const [locale, setLocale] = useState('ru-RU');
   const [lead, setLead] = useState(15);
   const [defecations, setDefecations] = useState([]);
+  const [meals, setMeals] = useState([]);
   const [justLogged, setJustLogged] = useState(false);
   const [defModalVisible, setDefModalVisible] = useState(false);
 
@@ -54,6 +55,7 @@ export default function PredictScreen() {
     const p = predict({ defecations, meals, profile, nowMs: Date.now() });
     setPrediction(p);
     setDefecations(defecations);
+    setMeals(meals);
     setLead(settings.alarmLeadMinutes);
   }, []);
 
@@ -109,8 +111,12 @@ export default function PredictScreen() {
   const todayKey = dateKey(Date.now());
 
   const todayEntries = useMemo(
-    () => defecations.filter((d) => dateKey(d.timeMs) === todayKey).sort((a, b) => b.timeMs - a.timeMs),
-    [defecations, todayKey]
+    () =>
+      [
+        ...defecations.filter((d) => dateKey(d.timeMs) === todayKey),
+        ...meals.filter((m) => dateKey(m.timeMs) === todayKey),
+      ].sort((a, b) => b.timeMs - a.timeMs),
+    [defecations, meals, todayKey]
   );
 
   // Прогресс дня: доля прошедшего времени суток (кольцо в hero).
@@ -261,22 +267,33 @@ export default function PredictScreen() {
             </View>
           ) : (
             <View>
-              {todayEntries.slice(0, 5).map((d, i) => (
-                <View key={d.id} style={[styles.dayRow, i > 0 && { borderTopWidth: StyleSheet.hairlineWidth, borderTopColor: palette.divider }]}>
-                  <View style={[styles.dayDot, { backgroundColor: palette.accent }]} />
-                  <Text style={[styles.dayTime, { color: palette.textPrimary }]}>{todayFmtTimes[i]}</Text>
-                  <Text style={[styles.dayLabel, { color: palette.textSecondary }]}>Дефекация</Text>
-                  {d.bristol ? (
-                    <View style={[styles.dayPill, { backgroundColor: palette.successSoft }]}>
-                      <Text style={[styles.dayPillText, { color: palette.successText }]}>Тип {d.bristol}</Text>
-                    </View>
-                  ) : (
-                    <View style={[styles.dayPill, { backgroundColor: palette.successSoft }]}>
-                      <Text style={[styles.dayPillText, { color: palette.successText }]}>отмечено</Text>
-                    </View>
-                  )}
-                </View>
-              ))}
+              {todayEntries.slice(0, 5).map((d, i) => {
+                const isMeal = d.source != null;
+                const accentColor = isMeal ? palette.warning : palette.success;
+                return (
+                  <View key={d.id} style={[styles.dayRow, i > 0 && { borderTopWidth: StyleSheet.hairlineWidth, borderTopColor: palette.divider }]}>
+                    <View style={[styles.dayDot, { backgroundColor: accentColor }]} />
+                    <Text style={[styles.dayTime, { color: palette.textPrimary }]}>{todayFmtTimes[i]}</Text>
+                    {isMeal ? (
+                      <>
+                        <Text style={[styles.dayLabel, { color: palette.textSecondary }]} numberOfLines={1}>{d.name}</Text>
+                        <View style={[styles.dayPill, { backgroundColor: palette.warningSoft }]}>
+                          <Text style={[styles.dayPillText, { color: palette.warningSoftText }]}>
+                            {d.kcal != null ? `~${d.kcal} ккал` : 'приём пищи'}
+                          </Text>
+                        </View>
+                      </>
+                    ) : (
+                      <>
+                        <Text style={[styles.dayLabel, { color: palette.textSecondary }]}>Дефекация</Text>
+                        <View style={[styles.dayPill, { backgroundColor: palette.successSoft }]}>
+                          <Text style={[styles.dayPillText, { color: palette.successText }]}>{d.bristol ? `Тип ${d.bristol}` : 'отмечено'}</Text>
+                        </View>
+                      </>
+                    )}
+                  </View>
+                );
+              })}
               {todayEntries.length > 5 ? (
                 <Text style={[styles.dayMore, { color: palette.textMuted }]}>
                   и ещё {todayEntries.length - 5} {todayEntries.length - 5 === 1 ? 'запись' : todayEntries.length - 5 < 5 ? 'записи' : 'записей'}

@@ -32,6 +32,7 @@ export const paletteLight = {
   warning: '#F59E0B',
   warningSoft: '#FEF3E2',
   warningText: '#451A03',
+  warningSoftText: '#92400E',
   danger: '#DC2626',
   dangerSoft: '#FDE8E9',
 
@@ -77,6 +78,7 @@ export const paletteDark = {
   warning: '#F59E0B',
   warningSoft: '#451A03',
   warningText: '#451A03',
+  warningSoftText: '#FCD34D',
   danger: '#F87171',
   dangerSoft: '#7F1D1D',
 

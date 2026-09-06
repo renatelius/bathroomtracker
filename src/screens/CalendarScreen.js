@@ -160,6 +160,43 @@ export default function CalendarScreen() {
     ? new Date(prediction.predictedAtMs)
     : null;
 
+  const renderDay = ({ date, marking, state }) => {
+    const key = date ? `${date.year}-${String(date.month).padStart(2, '0')}-${String(date.day).padStart(2, '0')}` : null;
+    const m = key ? marked[key] : null;
+    const dots = (m && m.dots) || [];
+    const isToday = state === 'today';
+    const isSelected = !!(marking && marking.selected);
+    return (
+      <View
+        style={{
+          alignItems: 'center',
+          justifyContent: 'center',
+          flex: 1,
+          borderRadius: 100,
+          backgroundColor: isSelected ? palette.accent : isToday ? palette.accentSoft : undefined,
+        }}
+      >
+        <Text
+          style={{
+            fontSize: 14,
+            color: isSelected ? palette.textOnAccent : isToday ? palette.accent : palette.textPrimary,
+            fontWeight: isSelected ? '700' : '500',
+          }}
+        >
+          {String(date.day)}
+        </Text>
+        <View style={{ flexDirection: 'row', marginTop: 2, minHeight: 8 }}>
+          {dots.slice(0, 2).map((dot, i) => (
+            <View
+              key={dot.key + i}
+              style={{ width: 6, height: 6, borderRadius: 3, backgroundColor: dot.color, marginHorizontal: 1 }}
+            />
+          ))}
+        </View>
+      </View>
+    );
+  };
+
   return (
     <SafeAreaView style={[styles.flex, { backgroundColor: palette.bg }]}>
       <ScrollView>
@@ -171,6 +208,7 @@ export default function CalendarScreen() {
           markingType="custom"
           markedDates={marked}
           current={todayStr()}
+          dayComponent={renderDay}
           theme={{
             selectedDayBackgroundColor: palette.accent,
             todayTextColor: palette.accent,
