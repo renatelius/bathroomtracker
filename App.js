@@ -16,6 +16,7 @@ import Onboarding from './src/screens/Onboarding';
 import LogScreen from './src/screens/LogScreen';
 import PredictScreen from './src/screens/PredictScreen';
 import StatisticsScreen from './src/screens/StatisticsScreen';
+import BristolScreen from './src/screens/BristolScreen';
 import CalendarScreen from './src/screens/CalendarScreen';
 import HistoryScreen from './src/screens/HistoryScreen';
 import SettingsScreen from './src/screens/SettingsScreen';
@@ -293,6 +294,11 @@ function MainNavigator() {
         <Tab.Screen name="История" component={HistoryScreen} options={{ tabBarLabel: t('tabHistory') }} />
         <Tab.Screen name="Календарь" component={CalendarScreen} options={{ tabBarLabel: t('tabCalendar') }} />
         <Tab.Screen name="Статистика" component={StatisticsScreen} options={{ tabBarLabel: 'Статистика' }} />
+        <Tab.Screen
+          name="Бристоль"
+          component={BristolScreen}
+          options={{ tabBarLabel: 'Бристоль', tabBarButton: () => null }}
+        />
         <Tab.Screen
           name="Лог"
           component={LogScreen}

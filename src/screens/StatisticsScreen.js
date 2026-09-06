@@ -1,7 +1,7 @@
 import React, { useState, useCallback, useMemo } from 'react';
-import { View, Text, StyleSheet, ScrollView, RefreshControl } from 'react-native';
+import { View, Text, StyleSheet, ScrollView, RefreshControl, TouchableOpacity } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
-import { useFocusEffect } from '@react-navigation/native';
+import { useFocusEffect, useNavigation } from '@react-navigation/native';
 import { computeStats } from '../model/progression.mjs';
 import { getDefecations } from '../store/storage';
 import { ScreenHeader, Card, Section, Icon, FadeIn, EmptyState, Sparkline } from '../ui';
@@ -78,6 +78,7 @@ function Heatmap({ chunks, palette }) {
 
 export default function StatisticsScreen() {
   const palette = useThemeColors();
+  const navigation = useNavigation();
   const [defecations, setDefecations] = useState([]);
   const [refreshing, setRefreshing] = useState(false);
 
@@ -297,10 +298,21 @@ export default function StatisticsScreen() {
           title="По Бристольской шкале"
           right={
             bristolStats.rated > 0 ? (
+              <TouchableOpacity
+                onPress={() => navigation.navigate('Бристоль')}
+                activeOpacity={0.7}
+                accessibilityRole="button"
+                accessibilityLabel="Открыть детальный экран Бристоля"
+              >
+                <Text style={{ fontSize: 13, fontWeight: '600', color: palette.accent }}>
+                  Детали ›
+                </Text>
+              </TouchableOpacity>
+            ) : (
               <Text style={{ fontSize: 13, fontWeight: '500', color: palette.textSecondary }}>
                 {bristolStats.rated} с деталями
               </Text>
-            ) : null
+            )
           }
         />
         <Card tone="default">
