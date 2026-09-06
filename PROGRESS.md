@@ -227,3 +227,10 @@
 - `app.json` — adaptive bg `#2563EB`, splash `#F8FAFC`
 - `.quick/tasks/task-01.md` — для Amazon Quick (не коммитить)
 - `C:\Users\Ren\AppData\Local\Temp\opencode\make_icons2.js` — генератор иконок; `livefinal.js`/`cdnpoll2.js` — проверки
+
+## 06.09.2026 — еда видна на «Сегодня» + точки в календаре
+- PredictScreen: «Сегодня» теперь включает записи еды (имя + бейдж «~N ккал», янтарная точка вместо зелёной); пустое состояние «ничего не отмечено» только когда нет ни дефекаций, ни еды за день.
+- CalendarScreen: причиной неотрисованных меток был markingType="custom" (либа игнорирует массив dots, рендерит один dot без цвета). Решение — кастомный dayComponent (renderDay): рисует точки (дефекация success / приём пищи warning), рамку «сегодня», акцент дня прогноза и подсветку окна достоверности через customStyles.
+- Токены палитры: warningSoftText (light #92400E, dark #FCD34D).
+- Live-проверка через Chrome MCP: «Сегодня» показывает Гречку ~240 ккал без empty-сообщения; в календаре у сегодня две точки 6×6 (rgb(34,197,94) и rgb(245,158,11)).
+- Коммиты: main 8238e24 + e2e2faa, gh-pages 59f77a2. Бандл AppEntry-dcccd866e3b3b859d6a8379aab178405.js.
