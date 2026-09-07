@@ -10,6 +10,16 @@ import {
   stressFactor,
 } from './model.mjs';
 import {
+  validateCalories,
+  validateWaterGlasses,
+  validateStressLevel,
+  validateDate,
+  validatePortionWeight,
+  validateBaseTime,
+  validateGapDays,
+  clamp,
+} from './validators.mjs';
+import {
   computeStreak,
   bestStreak,
   computeStats,
@@ -399,5 +409,163 @@ test('progression: одна запись не даёт «Стабильный р
   const m = computeMilestones([{ timeMs: day(5) }], { nowMs: day(5) });
   const regular = m.find((x) => x.id === 'regularity');
   assert.equal(regular.done, false);
+});
+
+// ---------------- Этап 7: Валидаторы (edge cases) ----------------
+
+test('validators: clamp базовые случаи', () => {
+  assert.equal(clamp(5, 0, 10), 5);
+  assert.equal(clamp(-5, 0, 10), 0);
+  assert.equal(clamp(20, 0, 10), 10);
+  assert.equal(clamp('a', 0, 10, 3), 3);
+  assert.equal(clamp(undefined, 0, 10, 3), 3);
+});
+
+test('validators: калории 10000 -> 10000, 15000 -> 10000', () => {
+  assert.equal(validateCalories(10000), 10000);
+  assert.equal(validateCalories(15000), 10000);
+});
+
+test('validators: калории отрицательные/NaN/undefined -> 0', () => {
+  assert.equal(validateCalories(-500), 0);
+  assert.equal(validateCalories(NaN), 0);
+  assert.equal(validateCalories(undefined), 0);
+  assert.equal(validateCalories('x'), 0);
+});
+
+test('validators: вода 25 -> 20, -5 -> 0, NaN -> 0', () => {
+  assert.equal(validateWaterGlasses(25), 20);
+  assert.equal(validateWaterGlasses(-5), 0);
+  assert.equal(validateWaterGlasses(NaN), 0);
+  assert.equal(validateWaterGlasses(undefined), 0);
+});
+
+test('validators: стресс 10 -> 5, 0 -> 1, NaN -> 3 (норма)', () => {
+  assert.equal(validateStressLevel(10), 5);
+  assert.equal(validateStressLevel(0), 1);
+  assert.equal(validateStressLevel(NaN), 3);
+  assert.equal(validateStressLevel(undefined), 3);
+});
+
+test('validators: дата из будущего -> сегодня', () => {
+  const future = new Date(Date.now() + 1e9);
+  const v = validateDate(future);
+  assert.ok(v.getTime() <= Date.now());
+});
+
+test('validators: дата 50 лет назад -> 10 лет назад', () => {
+  const old = new Date(1974, 0, 1);
+  const v = validateDate(old);
+  const tenYearsAgo = new Date(Date.now() - 10 * 365 * 24 * 60 * 60 * 1000);
+  assert.equal(v.getFullYear(), tenYearsAgo.getFullYear());
+});
+
+test('validators: невалидная дата -> сегодня', () => {
+  const v = validateDate(new Date('invalid'));
+  assert.ok(v.getTime() <= Date.now());
+  assert.ok(Number.isFinite(v.getTime()));
+});
+
+test('validators: вес порции 0-5000, мусор -> 100', () => {
+  assert.equal(validatePortionWeight(0), 0);
+  assert.equal(validatePortionWeight(300), 300);
+  assert.equal(validatePortionWeight(10000), 5000);
+  assert.equal(validatePortionWeight(NaN), 100);
+  assert.equal(validatePortionWeight(undefined), 100);
+});
+
+test('validators: базовое время 1-168ч, мусор -> 24', () => {
+  assert.equal(validateBaseTime(1), 1);
+  assert.equal(validateBaseTime(100), 100);
+  assert.equal(validateBaseTime(200), 168);
+  assert.equal(validateBaseTime(NaN), 24);
+  assert.equal(validateBaseTime(undefined), 24);
+});
+
+test('validators: gap дней 0-30, мусор -> 0', () => {
+  assert.equal(validateGapDays(5), 5);
+  assert.equal(validateGapDays(100), 30);
+  assert.equal(validateGapDays(NaN), 0);
+});
+
+// ---------------- Этап 7: Модель (edge cases) ----------------
+
+test('predict: 10000+ ккал, экстремальные коэффициенты не ломают модель', () => {
+  const res = predict({
+    defecations: [],
+    meals: [{ timeMs: now, kcal: 99999 }],
+    profile: { sex: 'female', heightCm: 165, weightKg: 50, waterGlasses: 99, stressLevel: 99 },
+    nowMs: now,
+  });
+  assert.ok(Number.isFinite(res.intervalH));
+  assert.ok(res.intervalH >= 12 && res.intervalH <= 96);
+  assert.ok(res.predictedAtMs > now);
+  assert.equal(res.factors.hydration, 1.0); // 99 стаканов -> clamp 20 -> норма
+  assert.equal(res.factors.stress, 1.1); // 99 -> clamp 5 -> высокий стресс
+});
+
+test('predict: NaN в nowMs -> безопасный fallback (не ломается)', () => {
+  const res = predict({
+    defecations: [{ timeMs: 1000 }, { timeMs: 2000 }],
+    meals: [],
+    profile: {},
+    nowMs: NaN,
+  });
+  assert.ok(Number.isFinite(res.predictedAtMs));
+  assert.ok(res.lowMs <= res.highMs);
+});
+
+test('predict: прогноз не уходит в прошлое при пустой истории', () => {
+  const res = predict({ defecations: [], meals: [], profile: {}, nowMs: now });
+  assert.ok(res.predictedAtMs > now);
+  assert.ok(res.lowMs > now);
+});
+
+test('predict: мало данных -> low-данные предупреждение', () => {
+  const res = predict({
+    defecations: [{ timeMs: now - 24 * H }],
+    meals: [],
+    profile: {},
+    nowMs: now,
+  });
+  assert.ok(res.warnings.some((w) => w.includes('Мало данных') || w.includes('Нет истории')));
+});
+
+test('predict: экстремальный стресс -> предупреждение про стресс', () => {
+  const res = predict({
+    defecations: [],
+    meals: [],
+    profile: { waterGlasses: 8, stressLevel: 5 },
+    nowMs: now,
+  });
+  assert.ok(res.warnings.some((w) => w.includes('стресс')));
+});
+
+test('predict: низкая гидратация -> предупреждение про воду', () => {
+  const res = predict({
+    defecations: [],
+    meals: [],
+    profile: { waterGlasses: 1, stressLevel: 3 },
+    nowMs: now,
+  });
+  assert.ok(res.warnings.some((w) => w.includes('гидратация')));
+});
+
+test('predict: с полной историей без стресса/воды — warnings пустые', () => {
+  const defecations = [];
+  for (let i = 8; i >= 1; i--) defecations.push({ timeMs: now - i * 24 * H });
+  const res = predict({
+    defecations,
+    meals: [],
+    profile: { waterGlasses: 8, stressLevel: 3 },
+    nowMs: now,
+  });
+  assert.equal(res.warnings.length, 0);
+});
+
+test('predict: вода и стресс нейтральны, если пользователь их не задал', () => {
+  const res = predict({ defecations: [], meals: [], profile: {}, nowMs: now });
+  assert.equal(res.factors.hydration, 1);
+  assert.equal(res.factors.stress, 1);
 });
 

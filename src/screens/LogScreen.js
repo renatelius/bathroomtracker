@@ -20,6 +20,7 @@ import { searchFoods, kcalForServing } from '../services/foodApi';
 import { addMeal, addDefecation } from '../store/storage';
 import { runAchievementCheck } from '../services/achievements';
 import { evaluateMealByPhoto, getProvider, setProvider, getApiKey, saveApiKey, caloriesOfResult } from '../services/vision';
+import { validateCalories, validatePortionWeight } from '../model/validators.mjs';
 import { ScreenHeader, Card, Button, TextField, Icon, DefecationModal } from '../ui';
 import { useThemeColors, type, space } from '../theme';
 import * as ImagePicker from 'expo-image-picker';
@@ -106,12 +107,12 @@ export default function LogScreen() {
 
   async function onLogSelected() {
     if (!selected) return;
-    const g = parseFloat(grams) || DEFAULT_GRAMS;
+    const g = validatePortionWeight(parseFloat(grams) || DEFAULT_GRAMS);
     const kcal = kcalForServing(selected.kcal100g, g);
     const payload = {
       name: selected.name,
       kcal100g: selected.kcal100g,
-      kcal,
+      kcal: validateCalories(kcal),
       grams: g,
       source: 'foodfacts',
       imageUrl: selected.imageUrl || null,
@@ -203,13 +204,14 @@ export default function LogScreen() {
       Alert.alert('Нет фото', 'Сначала выберите фото приёма пищи.');
       return;
     }
-    const kcal = parseFloat(photoCal);
+    const kcalRaw = parseFloat(photoCal);
+    const hasKcal = Number.isFinite(kcalRaw);
     const payload = {
       name: photoName.trim() || (photoResult && photoResult.name) || 'Приём пищи (фото)',
       photoUri,
-      kcal: Number.isFinite(kcal) ? kcal : null,
+      kcal: hasKcal ? validateCalories(kcalRaw) : null,
       kcal100g: null,
-      grams: Number.isFinite(kcal) ? null : null,
+      grams: null,
       source: 'photo',
     };
     await logMeal(payload);

@@ -11,6 +11,12 @@
  *   k_rhythm— суточный ритм (привычный час дефекации)
  */
 
+import {
+  validateWaterGlasses,
+  validateStressLevel,
+  validateGapDays,
+} from './validators.mjs';
+
 // ---------------------------------------------------------------------------
 // Константы модели (можно тюнить)
 // ---------------------------------------------------------------------------
@@ -182,9 +188,11 @@ export function foodFactor(meals, profile, nowMs = Date.now()) {
  * @returns {number}
  */
 export function hydrationFactor(waterGlasses) {
-  if (!Number.isFinite(waterGlasses) || waterGlasses == null) return 1;
-  if (waterGlasses < 4) return 1.15;
-  if (waterGlasses < 8) return 1.05;
+  // Нет данных или мусор — нейтрально (1). Явное число — валидируем и считаем.
+  if (typeof waterGlasses !== 'number' || !Number.isFinite(waterGlasses)) return 1;
+  const safe = validateWaterGlasses(waterGlasses);
+  if (safe < 4) return 1.15;
+  if (safe < 8) return 1.05;
   return 1.0;
 }
 
@@ -197,9 +205,11 @@ export function hydrationFactor(waterGlasses) {
  * @returns {number}
  */
 export function stressFactor(stressLevel) {
-  if (!Number.isFinite(stressLevel) || stressLevel == null) return 1;
-  if (stressLevel <= 2) return 0.95;
-  if (stressLevel >= 4) return 1.1;
+  // Нет данных или мусор — нейтрально (1). Явное число — валидируем и считаем.
+  if (typeof stressLevel !== 'number' || !Number.isFinite(stressLevel)) return 1;
+  const safe = validateStressLevel(stressLevel);
+  if (safe <= 2) return 0.95;
+  if (safe >= 4) return 1.1;
   return 1.0;
 }
 
@@ -282,6 +292,9 @@ export function predict(args) {
     nowMs = Date.now(),
   } = args;
 
+  // 🔒 Предохранитель: nowMs обязан быть валидным числом.
+  const safeNow = Number.isFinite(nowMs) ? nowMs : Date.now();
+
   // Упорядочиваем и очищаем от дублей/нулевых.
   const times = defecations
     .map((d) => d.timeMs)
@@ -299,12 +312,17 @@ export function predict(args) {
   if (intervalsH.length >= HISTORY_EMA_MIN) source = 'history';
   else if (intervalsH.length >= HISTORY_MEDIAN_MIN) source = 'median';
 
-  const kBody = bodyFactor(profile, nowMs);
-  const kFood = foodFactor(meals, profile, nowMs);
+  // 🔒 Кламп входных факторов воды/стресса через валидаторы (для предупреждений).
+  // Коэффициенты передаём сырыми — factor-функции сами нейтральны при отсутствии данных.
+  const waterGlasses = validateWaterGlasses(profile.waterGlasses);
+  const stressLevel = validateStressLevel(profile.stressLevel);
+
+  const kBody = bodyFactor(profile, safeNow);
+  const kFood = foodFactor(meals, profile, safeNow);
   const kHydration = hydrationFactor(profile.waterGlasses);
   const kStress = stressFactor(profile.stressLevel);
 
-  const predictedHour = (new Date(nowMs + base * kBody * kFood).getHours());
+  const predictedHour = (new Date(safeNow + base * kBody * kFood).getHours());
   const hourOfDay = times.map((t) => new Date(t).getHours());
   const kRhythm = rhythmFactor(hourOfDay, predictedHour);
 
@@ -313,13 +331,18 @@ export function predict(args) {
   // Окно достоверности: ±std интервалов (или физиологическая неопределённость).
   const s = std(intervalsH);
   const confH = s > 0 ? s : DEFAULT_INTERVAL_H * 0.3; // ~±30% от дефолта при пустоте
-  const predictedAtMs = nowMs + intervalH * 3600e3;
+  const predictedAtMs = safeNow + intervalH * 3600e3;
+  const lowMs = safeNow + Math.max(0, intervalH - confH) * 3600e3;
+  const highMs = safeNow + (intervalH + confH) * 3600e3;
+
+  // 🔒 Предупреждения для пользователя (Этап 7).
+  const warnings = generateWarnings(waterGlasses, stressLevel, intervalsH);
 
   return {
     predictedAtMs,
     intervalH: Math.round(intervalH * 100) / 100,
-    lowMs: nowMs + Math.max(0, intervalH - confH) * 3600e3,
-    highMs: nowMs + (intervalH + confH) * 3600e3,
+    lowMs,
+    highMs,
     confidenceH: Math.round(confH * 100) / 100,
     source,
     factors: {
@@ -330,5 +353,38 @@ export function predict(args) {
       rhythm: Math.round(kRhythm * 1000) / 1000,
       base: Math.round(base * 100) / 100,
     },
+    warnings,
   };
+}
+
+/**
+ * Генерирует массив предупреждений о ненадёжности прогноза.
+ * @param {number} waterGlasses - 0-20 (уже отвалидированы)
+ * @param {number} stressLevel - 1-5 (уже отвалидирован)
+ * @param {number[]} intervalsH - интервалы между дефекациями (часы)
+ * @returns {string[]}
+ */
+function generateWarnings(waterGlasses, stressLevel, intervalsH) {
+  const warnings = [];
+
+  if (waterGlasses < 4) {
+    warnings.push('💧 Низкая гидратация — прогноз может быть неточным');
+  }
+  if (stressLevel >= 4) {
+    warnings.push('🧠 Высокий стресс — ритм может быть нестабильным');
+  }
+  if (intervalsH.length < HISTORY_EMA_MIN) {
+    const count = intervalsH.length;
+    warnings.push(`📊 Мало данных (${count}) — точность прогноза низкая`);
+  }
+  // Слишком большой разрыв в истории — модель может «отставать».
+  const maxGap = intervalsH.reduce((a, b) => Math.max(a, b), 0);
+  if (validateGapDays(maxGap / 24) >= 30 && intervalsH.length > 0) {
+    warnings.push('⏳ Был длинный перерыв в записях — прогноз приблизителен');
+  }
+  if (intervalsH.length === 0) {
+    warnings.push('📊 Нет истории — прогноз по умолчанию');
+  }
+
+  return warnings;
 }

@@ -4,10 +4,11 @@ import { LinearGradient } from 'expo-linear-gradient';
 import { useThemeColors, card, radius, space } from '../theme';
 
 /**
- * Карточка-поверхность. `tone`: 'default' | 'accent' | 'gradient' | 'info' | 'teal'.
+ * Карточка-поверхность. `tone`: 'default' | 'accent' | 'gradient' | 'info' | 'teal' | 'warning'.
  * - gradient: премиальный градиент primary->secondary (для hero/CTA)
  * - teal: теал-акцент (ЖКТ-семантика, природный)
  * - info: подложка для семантических состояний
+ * - warning: жёлтая подложка для предупреждений
  * Мягкие тени, большие радиусы (крупные карточки 24px, hero 32px).
  */
 export default function Card({ tone = 'default', radius: r, style, children, ...rest }) {

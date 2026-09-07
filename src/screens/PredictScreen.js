@@ -15,6 +15,7 @@ import { predict } from '../model/model.mjs';
 import { computeStats, computeMilestones } from '../model/progression.mjs';
 import { getProfile, getDefecations, getMeals, getSettings, addDefecation, getDailyFactors, saveDailyFactors, dayKey } from '../store/storage';
 import { runAchievementCheck } from '../services/achievements';
+import { validateWaterGlasses, validateStressLevel } from '../model/validators.mjs';
 import { schedulePrediction, cancelPrediction, ensurePermissions } from '../services/notifications';
 import { ScreenHeader, Card, Button, Section, Icon, FadeIn, ProgressionCard, ProgressRing, DefecationModal, EmptyState, PredictionChart } from '../ui';
 import { useThemeColors, type, space, radius, shadow } from '../theme';
@@ -86,7 +87,12 @@ export default function PredictScreen() {
 
   const onFactorsChange = useCallback(async (patch) => {
     const key = dayKey(Date.now());
-    const merged = { ...factors, ...patch };
+    // 🔒 Предохранитель: клампим воду/стресс в безопасные диапазоны перед сохранением.
+    const safePatch = {
+      ...(patch.waterGlasses != null ? { waterGlasses: validateWaterGlasses(patch.waterGlasses) } : {}),
+      ...(patch.stressLevel != null ? { stressLevel: validateStressLevel(patch.stressLevel) } : {}),
+    };
+    const merged = { ...factors, ...safePatch };
     setFactors(merged);
     try {
       await saveDailyFactors(key, merged);
@@ -267,6 +273,19 @@ export default function PredictScreen() {
 
         {/* Кинематографичный график ритма + окно достоверности */}
         <PredictionChart defecations={defecations} prediction={prediction} />
+
+        {/* 🔒 Предупреждения о надёжности прогноза (Этап 7) */}
+        {prediction.warnings && prediction.warnings.length > 0 ? (
+          <Card tone="warning">
+            <View style={styles.warningsWrap}>
+              {prediction.warnings.map((w) => (
+                <View key={w} style={styles.warningRow}>
+                  <Text style={[styles.warningText, { color: palette.warningText }]}>{w}</Text>
+                </View>
+              ))}
+            </View>
+          </Card>
+        ) : null}
 
         {/* Сегодня — сводка + мини-таймлайн */}
         <Section
@@ -510,6 +529,11 @@ const styles = StyleSheet.create({
   // today summary
   dayEmpty: { flexDirection: 'row', alignItems: 'center' },
   dayEmptyText: { fontSize: type.body, marginLeft: space.md, flex: 1, lineHeight: 22 },
+
+  // 🔒 предупреждения (Этап 7)
+  warningsWrap: { flexDirection: 'column' },
+  warningRow: { flexDirection: 'row', alignItems: 'flex-start', paddingVertical: 3 },
+  warningText: { fontSize: type.caption, lineHeight: 18, flexShrink: 1 },
   dayRow: {
     flexDirection: 'row',
     alignItems: 'center',
