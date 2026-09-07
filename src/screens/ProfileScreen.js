@@ -142,7 +142,7 @@ export default function ProfileScreen() {
             accessibilityLabel="Достижения: уровни и награды"
           >
             <View style={[styles.iconWrap, { backgroundColor: palette.warningSoft }]}>
-              <Icon name="energy" size={20} color={palette.warningText} />
+              <Icon name="energy" size={20} color={palette.warningSoftText} />
             </View>
             <View style={{ flex: 1 }}>
               <Text style={[styles.rowTitle, { color: palette.textPrimary }]}>Достижения</Text>

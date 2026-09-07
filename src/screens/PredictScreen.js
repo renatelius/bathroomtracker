@@ -272,8 +272,8 @@ export default function PredictScreen() {
                 <View style={[styles.barMarker, { left: `${predPct}%` }]} />
               </View>
               <View style={styles.barLabels}>
-                <Text style={styles.barLabelText}>~{low.time}</Text>
-                <Text style={styles.barLabelText}>~{high.time}</Text>
+                <Text style={[styles.barLabelText, { color: palette.textOnAccent }]}>~{low.time}</Text>
+                <Text style={[styles.barLabelText, { color: palette.textOnAccent }]}>~{high.time}</Text>
               </View>
             </View>
 
@@ -294,7 +294,7 @@ export default function PredictScreen() {
             <View style={styles.warningsWrap}>
               {prediction.warnings.map((w) => (
                 <View key={w} style={styles.warningRow}>
-                  <Text style={[styles.warningText, { color: palette.warningText }]}>{w}</Text>
+                  <Text style={[styles.warningText, { color: palette.warningSoftText }]}>{w}</Text>
                 </View>
               ))}
             </View>
@@ -492,8 +492,8 @@ const styles = StyleSheet.create({
   },
   heroRing: { position: 'absolute', right: space.xl, top: space.xl },
   accentLabel: { fontSize: type.label, fontWeight: '500', opacity: 0.92, marginBottom: space.sm, marginRight: 120 },
-  accentDate: { fontSize: 22, fontWeight: type.heavy, textTransform: 'capitalize' },
-  accentTimeRow: { flexDirection: 'row', alignItems: 'center', marginTop: 6 },
+  accentDate: { fontSize: 22, fontWeight: type.heavy, textTransform: 'capitalize', marginRight: 120 },
+  accentTimeRow: { flexDirection: 'row', alignItems: 'center', marginTop: 6, marginRight: 120 },
   accentTime: { fontSize: 42, fontWeight: type.heavy, letterSpacing: -1 },
   shiftChip: {
     borderRadius: radius.pill,
@@ -531,7 +531,7 @@ const styles = StyleSheet.create({
     justifyContent: 'space-between',
     marginTop: 6,
   },
-  barLabelText: { fontSize: 11, color: '#FFFFFF', opacity: 0.78 },
+  barLabelText: { fontSize: 11, opacity: 0.78 },
   barConfidence: {
     fontSize: type.caption,
     fontWeight: '600',

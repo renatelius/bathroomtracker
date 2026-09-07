@@ -10,7 +10,7 @@ function rarityStyle(rarity, palette) {
     case 'epic':
       return { tint: palette.secondary, soft: palette.secondarySoft };
     case 'legendary':
-      return { tint: palette.warningText, soft: palette.warningSoft };
+      return { tint: palette.warning, soft: palette.warningSoft, xpBg: palette.warning, xpFg: palette.warningText };
     case 'common':
     default:
       return { tint: palette.textSecondary, soft: palette.surfaceAlt };
@@ -39,8 +39,8 @@ export default function AchievementCard({ achievement, unlocked = false }) {
           {achievement.title}
         </Text>
         {unlocked ? (
-          <View style={[styles.xpBadge, { backgroundColor: rs.tint }]}>
-            <Text style={[styles.xpText, { color: unlocked ? palette.textOnAccent : palette.textPrimary }]}>
+          <View style={[styles.xpBadge, { backgroundColor: rs.xpBg || rs.tint }]}>
+            <Text style={[styles.xpText, { color: rs.xpFg || palette.textOnAccent }]}>
               +{achievement.xp} XP
             </Text>
           </View>
