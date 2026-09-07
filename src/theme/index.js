@@ -5,8 +5,17 @@
  * Единые токены для типа, спейсинга, радиусов, теней и семантики.
  */
 
-import { paletteLight, paletteDark } from './palettes';
+import { paletteLight, paletteDark, auraPalettes } from './palettes';
 export { paletteLight, paletteDark, ThemeProvider, useThemeColors } from './theme-context';
+// «Ауры» — персональные темы оформления (Вайб и Эстетика).
+export {
+  DEFAULT_AURA,
+  AURAS,
+  isAuraId,
+  AuraProvider,
+  useAura,
+} from './aura';
+export { auraPalettes };
 
 // Основная палитра (по умолчанию — светлая; обратима хуком useThemeColors)
 export const palette = paletteLight;

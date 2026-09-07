@@ -13,6 +13,7 @@ import {
   PanResponder,
   Modal,
   Pressable,
+  Platform,
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { useRoute } from '@react-navigation/native';
@@ -21,11 +22,21 @@ import { addMeal, addDefecation } from '../store/storage';
 import { runAchievementCheck } from '../services/achievements';
 import { evaluateMealByPhoto, getProvider, setProvider, getApiKey, saveApiKey, caloriesOfResult } from '../services/vision';
 import { validateCalories, validatePortionWeight } from '../model/validators.mjs';
-import { ScreenHeader, Card, Button, TextField, Icon, DefecationModal } from '../ui';
+import { getMicrocopy } from '../utils/microcopy.mjs';
+import { ScreenHeader, Card, Button, TextField, Icon, DefecationModal, SmartSelector, MEAL_CATEGORIES } from '../ui';
 import { useThemeColors, type, space } from '../theme';
 import * as ImagePicker from 'expo-image-picker';
 
 const DEFAULT_GRAMS = 200;
+
+/** Уведомление, работающее и на web (где Alert.alert не отображается). */
+function notify(title, message) {
+  if (Platform.OS === 'web' && typeof window !== 'undefined') {
+    window.alert(`${title}:\n${message}`);
+  } else {
+    Alert.alert(title, message);
+  }
+}
 
 export default function LogScreen() {
   const palette = useThemeColors();
@@ -37,6 +48,7 @@ export default function LogScreen() {
   const [searched, setSearched] = useState(false);
   const [selected, setSelected] = useState(null);
   const [grams, setGrams] = useState(String(DEFAULT_GRAMS));
+  const [mealCategory, setMealCategory] = useState(null);
 
   // Центральный FAB может открыть Лог сразу в нужном под-режиме.
   useEffect(() => {
@@ -109,16 +121,22 @@ export default function LogScreen() {
     if (!selected) return;
     const g = validatePortionWeight(parseFloat(grams) || DEFAULT_GRAMS);
     const kcal = kcalForServing(selected.kcal100g, g);
+    // 🌞 Microcopy: весёлый предохранитель на подозрительно калорийную порцию.
+    if (kcal > 5000) {
+      notify('Странные цифры', getMicrocopy('highCalories', Math.round(kcal)));
+      return;
+    }
     const payload = {
       name: selected.name,
       kcal100g: selected.kcal100g,
       kcal: validateCalories(kcal),
       grams: g,
+      category: mealCategory,
       source: 'foodfacts',
       imageUrl: selected.imageUrl || null,
     };
     await logMeal(payload);
-    Alert.alert('Готово', `Приём добавлен${kcal ? `, ~${kcal} ккал` : ''}`);
+    notify('Готово', `Приём добавлен${kcal ? `, ~${Math.round(kcal)} ккал` : ''}. ${getMicrocopy('success')}`);
   }
 
   // --- Настройки AI ---
@@ -206,12 +224,19 @@ export default function LogScreen() {
     }
     const kcalRaw = parseFloat(photoCal);
     const hasKcal = Number.isFinite(kcalRaw);
+    const kcal = hasKcal ? validateCalories(kcalRaw) : null;
+    // 🌞 Microcopy: весёлый предохранитель на подозрительно калорийную порцию.
+    if (kcal != null && kcal > 5000) {
+      notify('Странные цифры', getMicrocopy('highCalories', Math.round(kcal)));
+      return;
+    }
     const payload = {
       name: photoName.trim() || (photoResult && photoResult.name) || 'Приём пищи (фото)',
       photoUri,
-      kcal: hasKcal ? validateCalories(kcalRaw) : null,
+      kcal,
       kcal100g: null,
       grams: null,
+      category: mealCategory,
       source: 'photo',
     };
     await logMeal(payload);
@@ -219,7 +244,7 @@ export default function LogScreen() {
     setPhotoCal('');
     setPhotoName('');
     setPhotoResult(null);
-    Alert.alert('Готово', payload.kcal != null ? `Добавлено, ${payload.kcal} ккал` : 'Добавлено без калорий');
+    notify('Готово', payload.kcal != null ? `Добавлено, ${payload.kcal} ккал. ${getMicrocopy('success')}` : `Добавлено без калорий. ${getMicrocopy('success')}`);
   }
 
   async function logDefecation(details = {}) {
@@ -228,7 +253,7 @@ export default function LogScreen() {
       details.bristol != null
         ? `Дефекация записана, тип ${details.bristol}${details.comfort != null ? `, комфорт ${details.comfort}/5` : ''}`
         : 'Дефекация записана';
-    Alert.alert('Готово', msg);
+    notify('Готово', `${msg}. ${getMicrocopy('success')}`);
   }
 
   return (
@@ -345,6 +370,14 @@ export default function LogScreen() {
                     style={styles.gramsField}
                   />
                 </View>
+                <SmartSelector
+                  label="Категория (по желанию)"
+                  placeholder="Например, обед"
+                  value={mealCategory || ''}
+                  options={MEAL_CATEGORIES}
+                  onSelect={setMealCategory}
+                  icon="calendar"
+                />
                 <Button title="+ Добавить приём пищи" icon="plus" onPress={onLogSelected} />
               </Card>
             ) : null}

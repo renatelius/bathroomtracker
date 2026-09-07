@@ -7,6 +7,7 @@ import {
   RefreshControl,
   Alert,
   TouchableOpacity,
+  Platform,
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { useFocusEffect, useNavigation } from '@react-navigation/native';
@@ -16,6 +17,7 @@ import { computeStats, computeMilestones } from '../model/progression.mjs';
 import { getProfile, getDefecations, getMeals, getSettings, addDefecation, getDailyFactors, saveDailyFactors, dayKey } from '../store/storage';
 import { runAchievementCheck } from '../services/achievements';
 import { validateWaterGlasses, validateStressLevel } from '../model/validators.mjs';
+import { getMicrocopy } from '../utils/microcopy.mjs';
 import { schedulePrediction, cancelPrediction, ensurePermissions } from '../services/notifications';
 import { ScreenHeader, Card, Button, Section, Icon, FadeIn, ProgressionCard, ProgressRing, DefecationModal, EmptyState, PredictionChart } from '../ui';
 import { useThemeColors, type, space, radius, shadow } from '../theme';
@@ -100,6 +102,18 @@ export default function PredictScreen() {
       runAchievementCheck();
     } catch (e) {
       // хранилище недоступно — оставляем локальное значение
+    }
+    // 🌞 Microcopy: живая подсказка при экстремумах воды/стресса.
+    const lowWater = safePatch.waterGlasses != null && merged.waterGlasses < 4;
+    const highStress = safePatch.stressLevel != null && merged.stressLevel >= 5;
+    if (lowWater || highStress) {
+      const title = lowWater ? '💧 Вода' : '🧠 Стресс';
+      const msg = lowWater ? getMicrocopy('lowWater', merged.waterGlasses) : getMicrocopy('highStress', merged.stressLevel);
+      if (Platform.OS === 'web' && typeof window !== 'undefined') {
+        window.alert(`${title}:\n${msg}`);
+      } else {
+        Alert.alert(title, msg);
+      }
     }
   }, [factors, load]);
 

@@ -10,7 +10,7 @@ import {
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { saveProfile } from '../store/storage';
-import { ScreenHeader, Chip, Button, TextField, Icon, Illustration } from '../ui';
+import { ScreenHeader, Chip, Button, Icon, Illustration, SmartSelector, WEIGHT_OPTIONS, HEIGHT_OPTIONS, YEAR_OPTIONS } from '../ui';
 import { useThemeColors, type, space, radius } from '../theme';
 
 const PROMOS = [
@@ -168,26 +168,28 @@ export default function Onboarding({ onDone }) {
 
           {step === 1 && (
             <View>
-              <TextField
+              <SmartSelector
                 label="Рост, см"
-                keyboardType="numeric"
-                value={heightCm}
-                onChangeText={setHeightCm}
-                placeholder="Например 175"
+                placeholder="Выберите рост"
+                value={heightCm ? `${heightCm} см` : ''}
+                options={HEIGHT_OPTIONS}
+                onSelect={(v) => setHeightCm(String(parseInt(v, 10) || ''))}
+                icon="profile"
               />
-              <TextField
+              <SmartSelector
                 label="Вес, кг"
-                keyboardType="numeric"
-                value={weightKg}
-                onChangeText={setWeightKg}
-                placeholder="Например 70"
+                placeholder="Выберите вес"
+                value={weightKg ? `${weightKg} кг` : ''}
+                options={WEIGHT_OPTIONS}
+                onSelect={(v) => setWeightKg(String(parseInt(v, 10) || ''))}
               />
-              <TextField
+              <SmartSelector
                 label="Год рождения"
-                keyboardType="numeric"
+                placeholder="Выберите год"
                 value={birthYear}
-                onChangeText={setBirthYear}
-                placeholder="Например 1990"
+                options={YEAR_OPTIONS}
+                onSelect={(v) => setBirthYear(String(parseInt(v, 10) || ''))}
+                icon="calendar"
               />
             </View>
           )}

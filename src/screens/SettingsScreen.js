@@ -7,13 +7,14 @@ import { getSettings, saveSettings, getProfile, getDefecations, getMeals, export
 import { predict } from '../model/model.mjs';
 import { applyReminder, cancelAlarm, calendarPermission } from '../services/alarmService';
 import { ScreenHeader, Card, Chip, Button, Section, TextField, Icon } from '../ui';
-import { useThemeColors, type, space } from '../theme';
+import { useThemeColors, useAura, AURAS, type, space, radius } from '../theme';
 
 const LEAD_OPTIONS = [0, 5, 10, 15, 30, 60];
 
 export default function SettingsScreen() {
   const palette = useThemeColors();
   const navigation = useNavigation();
+  const { aura, setAura } = useAura();
   const [settings, setSettings] = useState(null);
   const [busy, setBusy] = useState(false);
   const [exportedText, setExportedText] = useState('');
@@ -253,6 +254,38 @@ export default function SettingsScreen() {
           />
         </Card>
 
+        <Card>
+          <Section title="Аура" />
+          <Text style={[styles.rowDesc, { color: palette.textSecondary, marginBottom: space.md }]}>
+            Персональная тема оформления. Меняемся мгновенно, сохраняется на устройстве.
+          </Text>
+          <View style={styles.auraRow}>
+            {AURAS.map((a) => {
+              const active = aura === a.id;
+              return (
+                <TouchableOpacity
+                  key={a.id}
+                  onPress={() => setAura(a.id)}
+                  activeOpacity={0.75}
+                  style={[
+                    styles.auraChip,
+                    { backgroundColor: palette.surfaceAlt, borderColor: active ? palette.accent : palette.border },
+                  ]}
+                  accessibilityRole="radio"
+                  accessibilityState={{ selected: active }}
+                  accessibilityLabel={a.name}
+                >
+                  <Text style={styles.auraEmoji}>{a.emoji}</Text>
+                  <Text style={[styles.auraName, { color: active ? palette.accent : palette.textPrimary }]}>
+                    {a.name}
+                  </Text>
+                  {active ? <Icon name="check" size={15} color={palette.accent} /> : null}
+                </TouchableOpacity>
+              );
+            })}
+          </View>
+        </Card>
+
         <Button
           title="Применить к прогнозу"
           icon="alarm"
@@ -413,4 +446,17 @@ const styles = StyleSheet.create({
   noteBox: { borderRadius: 14, padding: space.md, marginTop: space.md },
   note: { fontSize: type.caption, lineHeight: 17 },
   mono: { fontFamily: Platform.OS === 'ios' ? 'Menlo' : 'monospace', fontSize: 12 },
+  auraRow: { flexDirection: 'row', flexWrap: 'wrap', gap: 10 },
+  auraChip: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 8,
+    borderWidth: 1,
+    borderRadius: radius.pill,
+    paddingHorizontal: 14,
+    paddingVertical: 10,
+    minHeight: 40,
+  },
+  auraEmoji: { fontSize: 16 },
+  auraName: { fontSize: 14, fontWeight: type.medium },
 });

@@ -85,7 +85,14 @@ export default function PredictionChart({ defecations = [], prediction }) {
 
   return (
     <FadeIn key={String(prediction.predictedAtMs)} translateY={22} style={styles.fade}>
-      <View style={[styles.card, { backgroundColor: palette.surface, ...styles.cardShadow }]}>
+      <View
+        style={[
+          styles.card,
+          { backgroundColor: palette.surface },
+          // ✨ Кинематографичное свечение контуром акцента (аура подхватывается автоматически).
+          { shadowColor: palette.accent, shadowOpacity: 0.25, shadowRadius: 18, shadowOffset: { width: 0, height: 6 }, elevation: 6 },
+        ]}
+      >
         {/* Заголовок + процент уверенности */}
         <View style={styles.header}>
           <Text style={[styles.title, { color: palette.textPrimary }]}>Прогноз активности</Text>
@@ -203,7 +210,8 @@ export default function PredictionChart({ defecations = [], prediction }) {
                   ))
                 : null}
 
-              {/* Точка прогноза */}
+              {/* Точка прогноза со свечением */}
+              <Circle cx={xf} cy={yForecast} r={11} fill={palette.teal} opacity={0.16} />
               <Circle cx={xf} cy={yForecast} r={5.5} fill={palette.bg} stroke={palette.teal} strokeWidth={2.5} />
             </Svg>
           </View>
@@ -247,13 +255,6 @@ const styles = StyleSheet.create({
   card: {
     borderRadius: radius.lg,
     padding: space.xl,
-  },
-  cardShadow: {
-    shadowColor: '#0F172A',
-    shadowOffset: { width: 0, height: 4 },
-    shadowOpacity: 0.06,
-    shadowRadius: 12,
-    elevation: 3,
   },
   header: {
     flexDirection: 'row',

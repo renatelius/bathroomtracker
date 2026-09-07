@@ -15,3 +15,4 @@ export { default as AchievementCard } from './AchievementCard';
 export { default as DefecationModal } from './DefecationModal';
 export { default as EmptyState, Illustration } from './EmptyState';
 export { BRISTOL_TYPES, COMFORT_LEVELS, BristolScale, ComfortPicker } from './BristolPicker';
+export { default as SmartSelector, WEIGHT_OPTIONS, HEIGHT_OPTIONS, YEAR_OPTIONS, MEAL_CATEGORIES } from './SmartInputs';

@@ -7,7 +7,7 @@
     "start": "expo start",
     "android": "expo start --android",
     "web": "expo start --web",
-    "test": "node --test src/model/model.test.mjs"
+    "test": "node --test src/model/model.test.mjs src/utils/microcopy.test.mjs"
   },
   "dependencies": {
     "@expo/metro-runtime": "~6.1.2",

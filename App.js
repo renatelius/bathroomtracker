@@ -9,7 +9,7 @@ import { getProfile } from './src/store/storage';
 import { addDefecation } from './src/store/storage';
 import I18nProvider, { useI18n } from './src/i18n';
 import { Icon } from './src/ui';
-import { useThemeColors, ThemeProvider, radius, space, shadow } from './src/theme';
+import { useThemeColors, ThemeProvider, radius, space, shadow, useAura, AuraProvider } from './src/theme';
 import { setGoToLogHandler } from './src/services/nav';
 import { onNotificationTap } from './src/services/notifications';
 import Onboarding from './src/screens/Onboarding';
@@ -378,10 +378,20 @@ function Root() {
 export default function App() {
   return (
     <SafeAreaProvider>
-      <ThemeProvider>
-        <Root />
-      </ThemeProvider>
+      <AuraProvider>
+        <RootAura />
+      </AuraProvider>
     </SafeAreaProvider>
+  );
+}
+
+/** Прокладка: читает текущую ауру из контекста и передаёт её в ThemeProvider. */
+function RootAura() {
+  const { aura } = useAura();
+  return (
+    <ThemeProvider aura={aura}>
+      <Root />
+    </ThemeProvider>
   );
 }
 
