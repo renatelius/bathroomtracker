@@ -6,11 +6,13 @@ import {
   StyleSheet,
   TouchableOpacity,
   Image,
+  Alert,
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { useFocusEffect } from '@react-navigation/native';
 import { getMeals, getDefecations, removeMeal, removeDefecation } from '../store/storage';
-import { ScreenHeader, Card, Icon, FadeIn, CategoryModal, EmptyState } from '../ui';
+import { generateHealthReport } from '../services/reportService';
+import { ScreenHeader, Card, Button, Icon, FadeIn, CategoryModal, EmptyState } from '../ui';
 import { useThemeColors, type, space, radius } from '../theme';
 
 const CATEGORIES = [
@@ -32,6 +34,7 @@ export default function HistoryScreen() {
   const [defecations, setDefecations] = useState([]);
   const [filter, setFilter] = useState(ALL);
   const [modalVisible, setModalVisible] = useState(false);
+  const [exporting, setExporting] = useState(false);
 
   const load = useCallback(async () => {
     setMeals(await getMeals());
@@ -48,6 +51,18 @@ export default function HistoryScreen() {
   async function onDelete(item) {
     if (item.kind === 'meal') setMeals(await removeMeal(item.id));
     else setDefecations(await removeDefecation(item.id));
+  }
+
+  async function onExport() {
+    if (exporting) return;
+    setExporting(true);
+    try {
+      await generateHealthReport(30);
+    } catch (e) {
+      Alert.alert('Ошибка', 'Не удалось сформировать отчёт. Попробуйте ещё раз.');
+    } finally {
+      setExporting(false);
+    }
   }
 
   function toggleFilter(id) {
@@ -148,6 +163,29 @@ export default function HistoryScreen() {
             />
           ))}
         </View>
+      </View>
+
+      <View style={[styles.exportWrap, { backgroundColor: palette.bg }]}>
+        <Card tone="default">
+          <View style={styles.exportCard}>
+            <View style={styles.exportText}>
+              <Text style={[styles.exportTitle, { color: palette.textPrimary }]}>
+                Экспорт для врача
+              </Text>
+              <Text style={[styles.exportSubtitle, { color: palette.textMuted }]}>
+                PDF-отчёт за последние 30 дней
+              </Text>
+            </View>
+            <Button
+              title={exporting ? 'Формируем…' : 'Сгенерировать PDF'}
+              icon="chart"
+              loading={exporting}
+              disabled={exporting}
+              onPress={onExport}
+              style={styles.exportBtn}
+            />
+          </View>
+        </Card>
       </View>
 
       <FlatList
@@ -252,6 +290,12 @@ const styles = StyleSheet.create({
   },
   filterBadgeText: { fontSize: 11, fontWeight: type.semibold },
   meta: { fontSize: type.caption, marginTop: 4, marginBottom: 4 },
+  exportWrap: { paddingHorizontal: space.xl, paddingBottom: space.sm },
+  exportCard: { flexDirection: 'row', alignItems: 'center' },
+  exportText: { flex: 1, paddingRight: space.lg },
+  exportTitle: { fontSize: type.body, fontWeight: type.semibold },
+  exportSubtitle: { fontSize: type.caption, marginTop: 3, lineHeight: 17 },
+  exportBtn: { minWidth: 168 },
   list: { paddingHorizontal: space.xl, paddingBottom: 30 },
   row: {
     flexDirection: 'row',

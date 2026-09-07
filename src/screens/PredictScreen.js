@@ -6,15 +6,17 @@ import {
   ScrollView,
   RefreshControl,
   Alert,
+  TouchableOpacity,
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { useFocusEffect, useNavigation } from '@react-navigation/native';
 import { LinearGradient } from 'expo-linear-gradient';
 import { predict } from '../model/model.mjs';
 import { computeStats, computeMilestones } from '../model/progression.mjs';
-import { getProfile, getDefecations, getMeals, getSettings, addDefecation } from '../store/storage';
+import { getProfile, getDefecations, getMeals, getSettings, addDefecation, getDailyFactors, saveDailyFactors, dayKey } from '../store/storage';
+import { runAchievementCheck } from '../services/achievements';
 import { schedulePrediction, cancelPrediction, ensurePermissions } from '../services/notifications';
-import { ScreenHeader, Card, Button, Section, Icon, FadeIn, ProgressionCard, ProgressRing, DefecationModal, EmptyState } from '../ui';
+import { ScreenHeader, Card, Button, Section, Icon, FadeIn, ProgressionCard, ProgressRing, DefecationModal, EmptyState, PredictionChart } from '../ui';
 import { useThemeColors, type, space, radius, shadow } from '../theme';
 
 const DAY = 24 * 3600e3;
@@ -43,6 +45,7 @@ export default function PredictScreen() {
   const [meals, setMeals] = useState([]);
   const [justLogged, setJustLogged] = useState(false);
   const [defModalVisible, setDefModalVisible] = useState(false);
+  const [factors, setFactors] = useState({ waterGlasses: 0, stressLevel: 3 });
 
   const progStats = useMemo(() => computeStats(defecations), [defecations]);
   const milestones = useMemo(() => computeMilestones(defecations), [defecations]);
@@ -52,7 +55,9 @@ export default function PredictScreen() {
     const defecations = await getDefecations();
     const meals = await getMeals();
     const settings = await getSettings();
-    const p = predict({ defecations, meals, profile, nowMs: Date.now() });
+    const daily = await getDailyFactors(dayKey(Date.now()));
+    setFactors(daily);
+    const p = predict({ defecations, meals, profile: { ...profile, ...daily }, nowMs: Date.now() });
     setPrediction(p);
     setDefecations(defecations);
     setMeals(meals);
@@ -76,7 +81,21 @@ export default function PredictScreen() {
     setJustLogged(true);
     setTimeout(() => setJustLogged(false), 1800);
     await load();
+    runAchievementCheck();
   }
+
+  const onFactorsChange = useCallback(async (patch) => {
+    const key = dayKey(Date.now());
+    const merged = { ...factors, ...patch };
+    setFactors(merged);
+    try {
+      await saveDailyFactors(key, merged);
+      await load();
+      runAchievementCheck();
+    } catch (e) {
+      // хранилище недоступно — оставляем локальное значение
+    }
+  }, [factors, load]);
 
   async function onSetAlarm() {
     setBusy(true);
@@ -246,6 +265,9 @@ export default function PredictScreen() {
           </LinearGradient>
         </FadeIn>
 
+        {/* Кинематографичный график ритма + окно достоверности */}
+        <PredictionChart defecations={defecations} prediction={prediction} />
+
         {/* Сегодня — сводка + мини-таймлайн */}
         <Section
           title="Сегодня"
@@ -329,6 +351,8 @@ export default function PredictScreen() {
             { key: 'base', label: 'Ваш ритм (история)', value: prediction.factors.base, unit: ' ч' },
             { key: 'body', label: 'Тело', value: prediction.factors.body, unit: '×' },
             { key: 'food', label: 'Еда (последние 48 ч)', value: prediction.factors.food, unit: '×' },
+            { key: 'hydration', label: 'Вода (гидратация)', value: prediction.factors.hydration, unit: '×' },
+            { key: 'stress', label: 'Стресс', value: prediction.factors.stress, unit: '×' },
             { key: 'rhythm', label: 'Суточный ритм', value: prediction.factors.rhythm, unit: '×' },
           ].map((f) => (
             <View key={f.key} style={styles.factorRow}>
@@ -340,6 +364,64 @@ export default function PredictScreen() {
               </View>
             </View>
           ))}
+        </Card>
+
+        <Section title="Факторы дня" />
+        <Card tone="default">
+          <View style={styles.factorRow}>
+            <View style={{ flex: 1, paddingRight: 12 }}>
+              <Text style={[styles.factorLabel, { color: palette.textPrimary }]}>💧 Вода (стаканов): {factors.waterGlasses}</Text>
+            </View>
+            <View style={styles.stepper}>
+              <TouchableOpacity
+                style={[styles.stepBtn, { backgroundColor: palette.surfaceAlt }]}
+                onPress={() => onFactorsChange({ waterGlasses: Math.max(0, factors.waterGlasses - 1) })}
+                accessibilityRole="button"
+                accessibilityLabel="Воды меньше"
+              >
+                <Text style={[styles.stepBtnText, { color: palette.textPrimary }]}>−</Text>
+              </TouchableOpacity>
+              <TouchableOpacity
+                style={[styles.stepBtn, { backgroundColor: palette.accent }]}
+                onPress={() => onFactorsChange({ waterGlasses: factors.waterGlasses + 1 })}
+                accessibilityRole="button"
+                accessibilityLabel="Воды больше"
+              >
+                <Text style={[styles.stepBtnText, { color: palette.textOnAccent }]}>+</Text>
+              </TouchableOpacity>
+            </View>
+          </View>
+
+          <View style={[styles.factorRow, { borderTopWidth: StyleSheet.hairlineWidth, borderTopColor: palette.divider }]}>
+            <View style={{ flex: 1, paddingRight: 12 }}>
+              <Text style={[styles.factorLabel, { color: palette.textPrimary }]}>🧠 Стресс (1-5): {factors.stressLevel}</Text>
+              <Text style={[styles.factorsHint, { color: palette.textMuted }]}>1 — расслаблен, 5 — высокий</Text>
+            </View>
+            <View style={styles.stepper}>
+              <TouchableOpacity
+                style={[styles.stepBtn, { backgroundColor: palette.surfaceAlt }]}
+                onPress={() => onFactorsChange({ stressLevel: Math.max(1, factors.stressLevel - 1) })}
+                accessibilityRole="button"
+                accessibilityLabel="Стресс меньше"
+              >
+                <Text style={[styles.stepBtnText, { color: palette.textPrimary }]}>−</Text>
+              </TouchableOpacity>
+              <TouchableOpacity
+                style={[styles.stepBtn, { backgroundColor: palette.accent }]}
+                onPress={() => onFactorsChange({ stressLevel: Math.min(5, factors.stressLevel + 1) })}
+                accessibilityRole="button"
+                accessibilityLabel="Стресс больше"
+              >
+                <Text style={[styles.stepBtnText, { color: palette.textOnAccent }]}>+</Text>
+              </TouchableOpacity>
+            </View>
+          </View>
+
+          <View style={[styles.factorRow, { borderTopWidth: StyleSheet.hairlineWidth, borderTopColor: palette.divider }]}>
+            <Text style={[styles.factorsHint, { color: palette.textMuted }]}>
+              Вода и стресс уточняют прогноз на сегодня.
+            </Text>
+          </View>
         </Card>
 
         <Button
@@ -458,6 +540,17 @@ const styles = StyleSheet.create({
   factorLabel: { fontSize: type.body, flex: 1, paddingRight: 12 },
   factorPill: { borderRadius: radius.sm, paddingHorizontal: 12, paddingVertical: 5 },
   factorValue: { fontSize: 14, fontWeight: '600' },
+  factorsHint: { fontSize: type.caption, marginTop: 3, lineHeight: 18 },
+  stepper: { flexDirection: 'row', alignItems: 'center' },
+  stepBtn: {
+    width: 40,
+    height: 40,
+    borderRadius: 20,
+    alignItems: 'center',
+    justifyContent: 'center',
+    marginLeft: 8,
+  },
+  stepBtnText: { fontSize: 22, fontWeight: '600', lineHeight: 24 },
 
   emptyBox: { borderRadius: radius.xl, padding: space.xl, alignItems: 'center', marginTop: space.sm },
   emptyIcon: { width: 64, height: 64, borderRadius: radius.lg, alignItems: 'center', justifyContent: 'center', marginBottom: space.lg },

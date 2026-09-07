@@ -136,6 +136,27 @@ export default function ProfileScreen() {
         <Card>
           <TouchableOpacity
             style={styles.settingsRow}
+            onPress={() => navigation.navigate('Достижения')}
+            activeOpacity={0.7}
+            accessibilityRole="button"
+            accessibilityLabel="Достижения: уровни и награды"
+          >
+            <View style={[styles.iconWrap, { backgroundColor: palette.warningSoft }]}>
+              <Icon name="energy" size={20} color={palette.warningText} />
+            </View>
+            <View style={{ flex: 1 }}>
+              <Text style={[styles.rowTitle, { color: palette.textPrimary }]}>Достижения</Text>
+              <Text style={[styles.settingsHint, { color: palette.textSecondary }]}>
+                Уровни, XP и награды
+              </Text>
+            </View>
+            <Icon name="arrowRight" size={18} color={palette.textMuted} />
+          </TouchableOpacity>
+        </Card>
+
+        <Card>
+          <TouchableOpacity
+            style={styles.settingsRow}
             onPress={() => navigation.navigate('Настройки')}
             activeOpacity={0.7}
             accessibilityRole="button"

@@ -346,6 +346,19 @@ export default function SettingsScreen() {
             Демо-оценка по фото выполняется локально — снимки никуда не передаются.
             Резервные копии содержат личные данные, храните их в безопасном месте.
           </Text>
+          <TouchableOpacity
+            style={[styles.securityRow, { marginTop: space.md }]}
+            onPress={() => navigation.navigate('Безопасность')}
+            activeOpacity={0.7}
+            accessibilityRole="button"
+            accessibilityLabel="Безопасность: шифрование данных"
+          >
+            <View style={[styles.iconWrap, { backgroundColor: palette.successSoft }]}>
+              <Icon name="lock" size={20} color={palette.successText} />
+            </View>
+            <Text style={[styles.securityLabel, { color: palette.textPrimary }]}>🔐 Безопасность данных</Text>
+            <Icon name="arrowRight" size={18} color={palette.textMuted} />
+          </TouchableOpacity>
         </Card>
       </ScrollView>
     </SafeAreaView>
@@ -381,6 +394,8 @@ const styles = StyleSheet.create({
   subNote: { fontSize: type.label, fontWeight: type.semibold, marginTop: space.lg },
   chips: { flexDirection: 'row', flexWrap: 'wrap', marginTop: space.sm },
   spacer: { marginTop: space.md },
+  securityRow: { flexDirection: 'row', alignItems: 'center', minHeight: 48 },
+  securityLabel: { fontSize: 15, fontWeight: type.medium, flex: 1, paddingLeft: space.md },
   noteBox: { borderRadius: 14, padding: space.md, marginTop: space.md },
   note: { fontSize: type.caption, lineHeight: 17 },
   mono: { fontFamily: Platform.OS === 'ios' ? 'Menlo' : 'monospace', fontSize: 12 },

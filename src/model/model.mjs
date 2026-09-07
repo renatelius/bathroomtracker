@@ -173,6 +173,37 @@ export function foodFactor(meals, profile, nowMs = Date.now()) {
 }
 
 /**
+ * Коэффициент гидратации k_hydration на основе выпитых стаканов воды за день.
+ * Считается, что норма для взрослого — ~8 стаканов.
+ * Мало воды (<4) замедляет транзит (1.15), 4-7 — небольшое замедление (1.05),
+ * 8+ — норма (1.0).
+ *
+ * @param {number} waterGlasses - стаканов воды за сегодня (0-20+)
+ * @returns {number}
+ */
+export function hydrationFactor(waterGlasses) {
+  if (!Number.isFinite(waterGlasses) || waterGlasses == null) return 1;
+  if (waterGlasses < 4) return 1.15;
+  if (waterGlasses < 8) return 1.05;
+  return 1.0;
+}
+
+/**
+ * Коэффициент стресса k_stress на основе уровня стресса за день (1-5, 3 = норма).
+ * Высокий стресс (4-5) сбивает ритм — замедление 1.1. Расслабленное состояние
+ * (1-2) — лёгкая нормализация 0.95.
+ *
+ * @param {number} stressLevel - уровень стресса 1..5 (3 = норма)
+ * @returns {number}
+ */
+export function stressFactor(stressLevel) {
+  if (!Number.isFinite(stressLevel) || stressLevel == null) return 1;
+  if (stressLevel <= 2) return 0.95;
+  if (stressLevel >= 4) return 1.1;
+  return 1.0;
+}
+
+/**
  * Коэффициент суточного ритма. Если у пользователя есть характерный час
  * дефекации, усиливаем прогноз рядом с ним (небольшой множитель).
  *
@@ -229,7 +260,8 @@ export function baseFactor(intervalsH) {
  *   defecations: {timeMs: number}[],
  *   meals: {timeMs: number, kcal: number}[],
  *   profile: {sex?: 'male'|'female', birthYear?: number, heightCm?: number,
- *             weightKg?: number, bodyType?: keyof typeof BODY_TYPES},
+ *             weightKg?: number, bodyType?: keyof typeof BODY_TYPES,
+ *             waterGlasses?: number, stressLevel?: number},
  *   nowMs?: number,
  * }} args
  * @returns {{
@@ -239,7 +271,7 @@ export function baseFactor(intervalsH) {
  *   highMs: number,
  *   confidenceH: number,
  *   source: 'history'|'median'|'default',
- *   factors: {body: number, food: number, rhythm: number, base: number},
+ *   factors: {body: number, food: number, rhythm: number, hydration: number, stress: number, base: number},
  * }}
  */
 export function predict(args) {
@@ -269,12 +301,14 @@ export function predict(args) {
 
   const kBody = bodyFactor(profile, nowMs);
   const kFood = foodFactor(meals, profile, nowMs);
+  const kHydration = hydrationFactor(profile.waterGlasses);
+  const kStress = stressFactor(profile.stressLevel);
 
   const predictedHour = (new Date(nowMs + base * kBody * kFood).getHours());
   const hourOfDay = times.map((t) => new Date(t).getHours());
   const kRhythm = rhythmFactor(hourOfDay, predictedHour);
 
-  const intervalH = clamp(base * kBody * kFood * kRhythm, MIN_INTERVAL_H, MAX_INTERVAL_H);
+  const intervalH = clamp(base * kBody * kFood * kHydration * kStress * kRhythm, MIN_INTERVAL_H, MAX_INTERVAL_H);
 
   // Окно достоверности: ±std интервалов (или физиологическая неопределённость).
   const s = std(intervalsH);
@@ -291,6 +325,8 @@ export function predict(args) {
     factors: {
       body: Math.round(kBody * 1000) / 1000,
       food: Math.round(kFood * 1000) / 1000,
+      hydration: Math.round(kHydration * 1000) / 1000,
+      stress: Math.round(kStress * 1000) / 1000,
       rhythm: Math.round(kRhythm * 1000) / 1000,
       base: Math.round(base * 100) / 100,
     },

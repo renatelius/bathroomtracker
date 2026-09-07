@@ -6,6 +6,8 @@ import {
   foodFactor,
   rhythmFactor,
   baseFactor,
+  hydrationFactor,
+  stressFactor,
 } from './model.mjs';
 import {
   computeStreak,
@@ -188,6 +190,65 @@ test('predict: окно low..high симметрично по confidenceH', () =
   });
   const halfWindowH = (res.highMs - res.lowMs) / H / 2;
   assert.equal(Math.round(halfWindowH * 100) / 100, res.confidenceH);
+});
+
+// ---------------- Модель: гидратация и стресс ----------------
+
+test('hydrationFactor: мало воды замедляет, норма - нейтрально', () => {
+  assert.equal(hydrationFactor(0), 1.15);
+  assert.equal(hydrationFactor(3), 1.15);
+  assert.equal(hydrationFactor(4), 1.05);
+  assert.equal(hydrationFactor(7), 1.05);
+  assert.equal(hydrationFactor(8), 1.0);
+  assert.equal(hydrationFactor(12), 1.0);
+});
+
+test('hydrationFactor: нет данных или мусор - нейтрально (1)', () => {
+  assert.equal(hydrationFactor(undefined), 1);
+  assert.equal(hydrationFactor(null), 1);
+  assert.equal(hydrationFactor('a'), 1);
+});
+
+test('stressFactor: высокий стресс замедляет, расслабление нормализует', () => {
+  assert.equal(stressFactor(1), 0.95);
+  assert.equal(stressFactor(2), 0.95);
+  assert.equal(stressFactor(3), 1.0);
+  assert.equal(stressFactor(4), 1.1);
+  assert.equal(stressFactor(5), 1.1);
+});
+
+test('stressFactor: нет данных - нейтрально (1)', () => {
+  assert.equal(stressFactor(undefined), 1);
+  assert.equal(stressFactor(null), 1);
+});
+
+test('predict: обезвоживание + стресс удлиняют интервал', () => {
+  const base = predict({
+    defecations: [],
+    meals: [],
+    profile: { sex: 'male', heightCm: 180, weightKg: 80 },
+    nowMs: now,
+  });
+  const dries = predict({
+    defecations: [],
+    meals: [],
+    profile: { sex: 'male', heightCm: 180, weightKg: 80, waterGlasses: 1, stressLevel: 5 },
+    nowMs: now,
+  });
+  assert.ok(dries.intervalH > base.intervalH, `base=${base.intervalH}, dried=${dries.intervalH}`);
+  assert.equal(dries.factors.hydration, 1.15);
+  assert.equal(dries.factors.stress, 1.1);
+});
+
+test('predict: по умолчанию новые факторы нейтральны (1)', () => {
+  const res = predict({
+    defecations: [],
+    meals: [],
+    profile: {},
+    nowMs: now,
+  });
+  assert.equal(res.factors.hydration, 1);
+  assert.equal(res.factors.stress, 1);
 });
 
 // ---------------- Прогрессия ----------------

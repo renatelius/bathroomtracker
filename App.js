@@ -20,7 +20,9 @@ import BristolScreen from './src/screens/BristolScreen';
 import CalendarScreen from './src/screens/CalendarScreen';
 import HistoryScreen from './src/screens/HistoryScreen';
 import SettingsScreen from './src/screens/SettingsScreen';
+import SecurityScreen from './src/screens/SecurityScreen';
 import ProfileScreen from './src/screens/ProfileScreen';
+import AchievementsScreen from './src/screens/AchievementsScreen';
 
 const Tab = createBottomTabNavigator();
 const navigationRef = createNavigationContainerRef();
@@ -306,9 +308,19 @@ function MainNavigator() {
         />
         <Tab.Screen name="Профиль" component={ProfileScreen} options={{ tabBarLabel: t('tabProfile') }} />
         <Tab.Screen
+          name="Достижения"
+          component={AchievementsScreen}
+          options={{ tabBarLabel: 'Достижения', tabBarButton: () => null }}
+        />
+        <Tab.Screen
           name="Настройки"
           component={SettingsScreen}
           options={{ tabBarLabel: t('tabSettings'), tabBarButton: () => null }}
+        />
+        <Tab.Screen
+          name="Безопасность"
+          component={SecurityScreen}
+          options={{ tabBarLabel: 'Безопасность', tabBarButton: () => null }}
         />
       </Tab.Navigator>
     </NavigationContainer>

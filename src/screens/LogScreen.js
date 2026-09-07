@@ -11,12 +11,15 @@ import {
   ScrollView,
   Animated,
   PanResponder,
+  Modal,
+  Pressable,
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { useRoute } from '@react-navigation/native';
 import { searchFoods, kcalForServing } from '../services/foodApi';
 import { addMeal, addDefecation } from '../store/storage';
-import { evaluateMealByPhoto } from '../services/vision';
+import { runAchievementCheck } from '../services/achievements';
+import { evaluateMealByPhoto, getProvider, setProvider, getApiKey, saveApiKey, caloriesOfResult } from '../services/vision';
 import { ScreenHeader, Card, Button, TextField, Icon, DefecationModal } from '../ui';
 import { useThemeColors, type, space } from '../theme';
 import * as ImagePicker from 'expo-image-picker';
@@ -45,7 +48,15 @@ export default function LogScreen() {
   const [photoCal, setPhotoCal] = useState('');
   const [photoName, setPhotoName] = useState('');
   const [estimating, setEstimating] = useState(false);
+  const [photoResult, setPhotoResult] = useState(null);
   const [defModalVisible, setDefModalVisible] = useState(false);
+
+  // настройки AI
+  const [aiModalVisible, setAiModalVisible] = useState(false);
+  const [aiProvider, setAiProvider] = useState('mock');
+  const [aiHfKey, setAiHfKey] = useState('');
+  const [aiOpenaiKey, setAiOpenaiKey] = useState('');
+  const [aiLoading, setAiLoading] = useState(false);
 
   // Свайп между под-режимами «Поиск» / «Своё фото»
   const panX = useRef(new Animated.Value(0)).current;
@@ -89,6 +100,7 @@ export default function LogScreen() {
     setResults([]);
     setQuery('');
     setSearched(false);
+    runAchievementCheck();
     return mealPayload;
   }
 
@@ -108,6 +120,43 @@ export default function LogScreen() {
     Alert.alert('Готово', `Приём добавлен${kcal ? `, ~${kcal} ккал` : ''}`);
   }
 
+  // --- Настройки AI ---
+  async function openAiSettings() {
+    const [prov, hf, oa] = await Promise.all([getProvider(), getApiKey('huggingface'), getApiKey('openai')]);
+    setAiProvider(prov);
+    setAiHfKey(hf ? '••••••••••••••••' : '');
+    setAiOpenaiKey(oa ? '••••••••••••••••' : '');
+    setAiModalVisible(true);
+  }
+
+  async function selectAiProvider(id) {
+    setAiProvider(id);
+    if (id !== 'mock') {
+      const key = await getApiKey(id);
+      if (!key) {
+        Alert.alert('⚠️ Нужен API-ключ', `Для «${id === 'openai' ? 'OpenAI' : 'Hugging Face'}» введите ключ ниже.`);
+      }
+    }
+    await setProvider(id);
+  }
+
+  async function onSaveAiKey(which) {
+    const key = which === 'openai' ? aiOpenaiKey : aiHfKey;
+    if (!key || key.includes('•')) {
+      Alert.alert('Пусто', 'Введите корректный ключ.');
+      return;
+    }
+    setAiLoading(true);
+    try {
+      await saveApiKey(which, key);
+      if (which === 'openai') setAiOpenaiKey('••••••••••••••••');
+      else setAiHfKey('••••••••••••••••');
+      Alert.alert('✅ Сохранено', 'Ключ безопасно сохранён в хранилище устройства.');
+    } finally {
+      setAiLoading(false);
+    }
+  }
+
   async function pickPhoto() {
     const perm = await ImagePicker.requestCameraPermissionsAsync();
     // даём выбрать из галереи (галерея не требует камеру)
@@ -120,6 +169,7 @@ export default function LogScreen() {
       setPhotoUri(result.assets[0].uri);
       setPhotoCal('');
       setPhotoName('');
+      setPhotoResult(null);
     }
   }
 
@@ -134,12 +184,13 @@ export default function LogScreen() {
   async function onEstimate() {
     if (!photoUri) return;
     setEstimating(true);
+    setPhotoResult(null);
     try {
       const res = await evaluateMealByPhoto(photoUri);
-      setPhotoCal(String(res.calories != null ? res.calories : ''));
-      if (res.note) {
-        Alert.alert('Оценка', `Примерно ${res.calories} ккал. ${res.note}`);
-      }
+      const kcal = caloriesOfResult(res);
+      setPhotoResult(res);
+      if (kcal != null) setPhotoCal(String(kcal));
+      if (res.name && res.provider !== 'mock') setPhotoName(res.name.replace(/[•]+/g, '').trim());
     } catch (e) {
       Alert.alert('Ошибка', e.message || 'Не удалось оценить');
     } finally {
@@ -154,7 +205,7 @@ export default function LogScreen() {
     }
     const kcal = parseFloat(photoCal);
     const payload = {
-      name: photoName.trim() || 'Приём пищи (фото)',
+      name: photoName.trim() || (photoResult && photoResult.name) || 'Приём пищи (фото)',
       photoUri,
       kcal: Number.isFinite(kcal) ? kcal : null,
       kcal100g: null,
@@ -165,6 +216,7 @@ export default function LogScreen() {
     setPhotoUri(null);
     setPhotoCal('');
     setPhotoName('');
+    setPhotoResult(null);
     Alert.alert('Готово', payload.kcal != null ? `Добавлено, ${payload.kcal} ккал` : 'Добавлено без калорий');
   }
 
@@ -308,6 +360,18 @@ export default function LogScreen() {
               )}
             </TouchableOpacity>
 
+            <TouchableOpacity
+              style={[styles.aiRow, { backgroundColor: palette.surfaceAlt }]}
+              onPress={openAiSettings}
+              activeOpacity={0.7}
+              accessibilityRole="button"
+              accessibilityLabel="Настроить AI-анализ фото"
+            >
+              <Icon name="chat" size={18} color={palette.accent} />
+              <Text style={[styles.aiRowText, { color: palette.textPrimary }]}>🤖 Настроить AI-анализ</Text>
+              <Icon name="arrowRight" size={16} color={palette.textMuted} />
+            </TouchableOpacity>
+
             {photoUri ? (
               <>
                 <Button
@@ -318,8 +382,27 @@ export default function LogScreen() {
                   variant="secondary"
                   style={styles.spacer}
                 />
+
+                {photoResult ? (
+                  <View style={[styles.aiResult, { backgroundColor: palette.accentSoft, borderColor: palette.border }]}>
+                    <View style={styles.aiResultHeader}>
+                      <Text style={[styles.aiResultName, { color: palette.textPrimary }]}>{photoResult.name || 'Блюдо'}</Text>
+                      {photoResult.calories != null ? (
+                        <Text style={[styles.aiResultKcal, { color: palette.accent }]}>{photoResult.calories} ккал</Text>
+                      ) : null}
+                    </View>
+                    {photoResult.description ? (
+                      <Text style={[styles.aiResultDesc, { color: palette.textSecondary }]}>{photoResult.description}</Text>
+                    ) : null}
+                    <Text style={[styles.aiResultMeta, { color: palette.textMuted }]}>
+                      Уверенность {Math.round((photoResult.confidence || 0) * 100)}% · провайдер {photoResult.provider}
+                      {photoResult.note ? `\n${photoResult.note}` : ''}
+                    </Text>
+                  </View>
+                ) : null}
+
                 <Text style={[styles.photoHint, { color: palette.textMuted }]}>
-                  Оценка по фото — демо-режим. Для точности подключите реальный распознаватель.
+                  Фото анализируется выбранным AI. Без настройки — демо-оценка.
                 </Text>
                 <TextField
                   label="Название (необязательно)"
@@ -355,6 +438,77 @@ export default function LogScreen() {
         onClose={() => setDefModalVisible(false)}
         onSave={(d) => logDefecation(d)}
       />
+
+      <Modal
+        visible={aiModalVisible}
+        transparent
+        animationType="fade"
+        onRequestClose={() => setAiModalVisible(false)}
+      >
+        <Pressable style={styles.aiBackdrop} onPress={() => setAiModalVisible(false)} accessibilityLabel="Закрыть настройки AI" />
+        <View pointerEvents="box-none" style={styles.aiModalHost}>
+          <View style={[styles.aiModalCard, { backgroundColor: palette.surface }]}>
+            <View style={styles.aiModalHeader}>
+              <Text style={[styles.aiModalTitle, { color: palette.textPrimary }]}>🤖 AI-анализ фото</Text>
+              <TouchableOpacity onPress={() => setAiModalVisible(false)} hitSlop={12} accessibilityRole="button" accessibilityLabel="Закрыть">
+                <Icon name="close" size={20} color={palette.textMuted} />
+              </TouchableOpacity>
+            </View>
+            <Text style={[styles.aiModalSub, { color: palette.textSecondary }]}>Провайдер для распознавания еды по фото</Text>
+
+            {[
+              { id: 'mock', title: '🎭 Демо-режим', desc: 'Случайные значения для тестирования', price: 'Бесплатно', acc: '★☆☆' },
+              { id: 'huggingface', title: '🤗 Hugging Face', desc: 'Бесплатный AI, базовое распознавание', price: 'Бесплатно', acc: '★★☆' },
+              { id: 'openai', title: '🧠 OpenAI Vision', desc: 'Максимальная точность (платно)', price: '~$0.01/фото', acc: '★★★★★' },
+            ].map((p) => {
+              const active = aiProvider === p.id;
+              return (
+                <TouchableOpacity
+                  key={p.id}
+                  style={[styles.aiOption, { backgroundColor: palette.surfaceAlt, borderColor: active ? palette.accent : 'transparent' }]}
+                  onPress={() => selectAiProvider(p.id)}
+                  activeOpacity={0.7}
+                  accessibilityRole="radio"
+                  accessibilityState={{ selected: active }}
+                >
+                  <View style={{ flex: 1 }}>
+                    <View style={styles.aiOptionHeader}>
+                      <Text style={[styles.aiOptionTitle, { color: palette.textPrimary }]}>{p.title}</Text>
+                      {active ? <Text style={[styles.aiOptionActive, { color: palette.accent }]}>✓ Активен</Text> : null}
+                    </View>
+                    <Text style={[styles.aiOptionDesc, { color: palette.textSecondary }]}>{p.desc}</Text>
+                    <Text style={[styles.aiOptionMeta, { color: palette.textMuted }]}>{p.price} · {p.acc}</Text>
+                  </View>
+                </TouchableOpacity>
+              );
+            })}
+
+            <Text style={[styles.aiKeysTitle, { color: palette.textPrimary }]}>🔑 API-ключи</Text>
+
+            <TextField
+              label="Hugging Face Token"
+              placeholder="hf_xxxxxxxxxxxx"
+              value={aiHfKey}
+              onChangeText={setAiHfKey}
+              secureTextEntry={false}
+              autoCapitalize="none"
+              style={styles.aiKeyField}
+            />
+            <Button title="Сохранить HF-ключ" icon="check" variant="secondary" loading={aiLoading} onPress={() => onSaveAiKey('huggingface')} style={styles.spacer} />
+
+            <TextField
+              label="OpenAI API Key"
+              placeholder="sk-xxxxxxxxxxxx"
+              value={aiOpenaiKey}
+              onChangeText={setAiOpenaiKey}
+              secureTextEntry={false}
+              autoCapitalize="none"
+              style={styles.aiKeyField}
+            />
+            <Button title="Сохранить OpenAI-ключ" icon="check" variant="secondary" loading={aiLoading} onPress={() => onSaveAiKey('openai')} style={styles.spacer} />
+          </View>
+        </View>
+      </Modal>
     </SafeAreaView>
   );
 }
@@ -404,6 +558,36 @@ const styles = StyleSheet.create({
   photoEmpty: { height: 150, alignItems: 'center', justifyContent: 'center' },
   photoEmptyText: { marginTop: 8, fontSize: type.body },
   photoHint: { fontSize: type.caption, textAlign: 'center', marginTop: 8, lineHeight: 18 },
+
+  aiRow: { flexDirection: 'row', alignItems: 'center', padding: 12, borderRadius: 12, marginTop: space.sm },
+  aiRowText: { flex: 1, fontSize: 14, fontWeight: type.semibold, marginLeft: 8 },
+  aiResult: { borderRadius: 12, borderWidth: 1, padding: 12, marginTop: space.md },
+  aiResultHeader: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', marginBottom: 4 },
+  aiResultName: { fontSize: 16, fontWeight: type.semibold, flex: 1 },
+  aiResultKcal: { fontSize: 16, fontWeight: type.heavy, marginLeft: 10 },
+  aiResultDesc: { fontSize: 13, lineHeight: 18, marginTop: 4 },
+  aiResultMeta: { fontSize: 12, lineHeight: 16, marginTop: 8 },
+
+  aiBackdrop: { flex: 1, backgroundColor: 'rgba(15,23,42,0.42)' },
+  aiModalHost: { position: 'absolute', right: 0, left: 0, bottom: 0 },
+  aiModalCard: {
+    borderTopLeftRadius: 20,
+    borderTopRightRadius: 20,
+    padding: space.xl,
+    paddingBottom: 32,
+    maxHeight: '85%',
+  },
+  aiModalHeader: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between' },
+  aiModalTitle: { fontSize: 18, fontWeight: type.heavy },
+  aiModalSub: { fontSize: type.caption, marginTop: 2, marginBottom: space.md },
+  aiOption: { borderRadius: 12, borderWidth: 1.5, padding: 12, marginBottom: space.sm },
+  aiOptionHeader: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between' },
+  aiOptionTitle: { fontSize: 15, fontWeight: type.semibold },
+  aiOptionActive: { fontSize: 12, fontWeight: type.semibold },
+  aiOptionDesc: { fontSize: 13, marginTop: 4 },
+  aiOptionMeta: { fontSize: 12, marginTop: 4 },
+  aiKeysTitle: { fontSize: 16, fontWeight: type.semibold, marginTop: space.md, marginBottom: space.md },
+  aiKeyField: { marginTop: space.md },
 
   spacer: { marginTop: space.md },
 });
