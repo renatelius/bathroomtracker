@@ -11,6 +11,7 @@
 
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { encrypt, decrypt, isEncryptionEnabled, setEncryptionEnabled, ENC_MARKER } from '../services/encryption';
+import { notifyDataChanged } from '../services/dataBus';
 
 /**
  * Зашифрованный бэкенд хранилища: интерфейс AsyncStorage, но записывает
@@ -71,6 +72,8 @@ async function readJSON(key, fallback) {
 
 async function writeJSON(key, value) {
   await storageBackend.setItem(key, JSON.stringify(value));
+  // 🔥 Автосинхронизация (если включена) — fire-and-forget, с дебаунсом.
+  notifyDataChanged();
 }
 
 // ---------------- Профиль ----------------

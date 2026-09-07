@@ -21,8 +21,10 @@ import CalendarScreen from './src/screens/CalendarScreen';
 import HistoryScreen from './src/screens/HistoryScreen';
 import SettingsScreen from './src/screens/SettingsScreen';
 import SecurityScreen from './src/screens/SecurityScreen';
+import SyncSettingsScreen from './src/screens/SyncSettingsScreen';
 import ProfileScreen from './src/screens/ProfileScreen';
 import AchievementsScreen from './src/screens/AchievementsScreen';
+import './src/services/syncService';
 
 const Tab = createBottomTabNavigator();
 const navigationRef = createNavigationContainerRef();
@@ -59,6 +61,9 @@ const DEEP_SCREENS = {
   profile: 'Профиль',
   настройки: 'Настройки',
   settings: 'Настройки',
+  синхронизация: 'Синхронизация',
+  sync: 'Синхронизация',
+  cloud: 'Синхронизация',
 };
 
 function parseDeepUrl(rawUrl) {
@@ -321,6 +326,11 @@ function MainNavigator() {
           name="Безопасность"
           component={SecurityScreen}
           options={{ tabBarLabel: 'Безопасность', tabBarButton: () => null }}
+        />
+        <Tab.Screen
+          name="Синхронизация"
+          component={SyncSettingsScreen}
+          options={{ tabBarLabel: 'Синхронизация', tabBarButton: () => null }}
         />
       </Tab.Navigator>
     </NavigationContainer>

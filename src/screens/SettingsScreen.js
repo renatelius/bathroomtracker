@@ -348,6 +348,20 @@ export default function SettingsScreen() {
           </Text>
           <TouchableOpacity
             style={[styles.securityRow, { marginTop: space.md }]}
+            onPress={() => navigation.navigate('Синхронизация')}
+            activeOpacity={0.7}
+            accessibilityRole="button"
+            accessibilityLabel="Синхронизация: облачный бэкап с шифрованием"
+          >
+            <View style={[styles.iconWrap, { backgroundColor: palette.infoSoft }]}>
+              <Icon name="cloud" size={20} color={palette.accent} />
+            </View>
+            <Text style={[styles.securityLabel, { color: palette.textPrimary }]}>☁️ Синхронизация с облаком</Text>
+            <Icon name="arrowRight" size={18} color={palette.textMuted} />
+          </TouchableOpacity>
+
+          <TouchableOpacity
+            style={[styles.securityRow, { marginTop: space.md }]}
             onPress={() => navigation.navigate('Безопасность')}
             activeOpacity={0.7}
             accessibilityRole="button"
